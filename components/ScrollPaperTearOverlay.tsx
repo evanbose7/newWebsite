@@ -38,6 +38,7 @@ const SEQUENCE_WORDS: WordItem[][] = [
 export const ScrollPaperTearOverlay: React.FC = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const portraitSectionRef = useRef<HTMLDivElement>(null);
+  const tearSectionRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const canvasContainerRef = useRef<HTMLDivElement>(null);
 
@@ -45,16 +46,9 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   const [visibleCount, setVisibleCount] = useState(1);
   const [isRevealing, setIsRevealing] = useState(false);
   const [isStatementScreen, setIsStatementScreen] = useState(false);
-  const [isPaperTearActive, setIsPaperTearActive] = useState(false);
 
   const revealTimerRef = useRef<NodeJS.Timeout | null>(null);
   const tearAnimationRef = useRef<number>(0);
-  const tearProgressRef = useRef<{ t: number; phase: string; phaseStart: number }>({
-    t: 0,
-    phase: 'closed',
-    phaseStart: 0,
-  });
-
   const noisePointsRef = useRef<number[]>([]);
 
   // Seed procedural jagged points for authentic fibrous paper tear
@@ -75,9 +69,9 @@ export const ScrollPaperTearOverlay: React.FC = () => {
 
   const currentWords = sentenceIdx < SEQUENCE_WORDS.length ? SEQUENCE_WORDS[sentenceIdx] : [];
 
-  // Lock body scroll during kinetic reveal; unlock when paper tear section is active
+  // Lock body scroll during word reveal; unlock scrolling when statement screen is active
   useEffect(() => {
-    if (isStatementScreen || isPaperTearActive) {
+    if (isStatementScreen) {
       document.body.style.overflow = 'unset';
       document.documentElement.style.overflow = 'unset';
     } else {
@@ -89,177 +83,184 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       document.body.style.overflow = 'unset';
       document.documentElement.style.overflow = 'unset';
     };
-  }, [isStatementScreen, isPaperTearActive]);
+  }, [isStatementScreen]);
+
+  // Track scroll progress for Phase 3 (Diagonal portrait transition)
+  const { scrollYProgress: portraitScrollProgress } = useScroll({
+    target: portraitSectionRef,
+    offset: ['start end', 'end start'],
+  });
+
+  const portraitX = useTransform(portraitScrollProgress, [0.1, 0.55], ['-45vw', '0vw']);
+  const portraitY = useTransform(portraitScrollProgress, [0.1, 0.55], ['40vh', '0vh']);
+  const portraitRotate = useTransform(portraitScrollProgress, [0.1, 0.55], [-16, 4]);
+  const portraitScale = useTransform(portraitScrollProgress, [0.1, 0.55], [0.72, 1.0]);
+  const portraitOpacity = useTransform(portraitScrollProgress, [0.08, 0.25, 0.55], [0, 1, 1]);
+
+  const textContentOpacity = useTransform(portraitScrollProgress, [0.25, 0.60], [0, 1]);
+  const textContentY = useTransform(portraitScrollProgress, [0.25, 0.60], [40, 0]);
+
+  // Track scroll progress for Phase 4 (Paper Tear Section AFTER Hero Portrait)
+  const { scrollYProgress: tearScrollProgress } = useScroll({
+    target: tearSectionRef,
+    offset: ['start end', 'end start'],
+  });
+
+  const tearProgress = useTransform(tearScrollProgress, [0.15, 0.75], [0, 1]);
 
   // Cubic Easing Function for Natural Physical Paper Resistance
   const cubicEase = (v: number) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
 
-  // High-Performance 60 FPS Canvas Paper Tear Renderer
-  const renderCanvas = useCallback(
-    (timestamp: number) => {
-      const canvas = canvasRef.current;
-      const container = canvasContainerRef.current;
-      if (!canvas || !container) {
-        tearAnimationRef.current = requestAnimationFrame(renderCanvas);
-        return;
+  // High-Performance 60 FPS Canvas Paper Tear Renderer driven by scroll
+  const renderCanvas = useCallback(() => {
+    const canvas = canvasRef.current;
+    const container = canvasContainerRef.current;
+    if (!canvas || !container) {
+      tearAnimationRef.current = requestAnimationFrame(renderCanvas);
+      return;
+    }
+    const ctx = canvas.getContext('2d');
+    if (!ctx) {
+      tearAnimationRef.current = requestAnimationFrame(renderCanvas);
+      return;
+    }
+
+    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+    const rect = container.getBoundingClientRect();
+    const w = rect.width || container.clientWidth || 1280;
+    const h = rect.height || container.clientHeight || w * (9 / 16);
+    const gw = Math.floor(w * dpr);
+    const gh = Math.floor(h * dpr);
+
+    if (canvas.width !== gw || canvas.height !== gh) {
+      canvas.width = gw;
+      canvas.height = gh;
+    }
+
+    const rawT = tearProgress.get();
+    const t = cubicEase(Math.max(0, Math.min(1, rawT)));
+
+    ctx.clearRect(0, 0, gw, gh);
+
+    // BOTTOM REVEALED CANVAS LAYER (#08080C WITH NEON MAGENTA AURA)
+    ctx.fillStyle = '#08080c';
+    ctx.fillRect(0, 0, gw, gh);
+
+    // Neon Magenta-Pink Radial Glow (#FF1493 / #E91E8C)
+    const cx = gw * 0.7;
+    const cy = gh * 0.6;
+    const auraRadius = 600 * dpr * (w / 1280 ? Math.max(0.7, w / 1280) : 1);
+    const auraGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, auraRadius);
+    auraGrad.addColorStop(0, 'rgba(255, 20, 147, 0.95)');
+    auraGrad.addColorStop(0.2, 'rgba(233, 30, 140, 0.45)');
+    auraGrad.addColorStop(0.4, 'rgba(139, 92, 246, 0.18)');
+    auraGrad.addColorStop(0.7, 'rgba(255, 20, 147, 0.04)');
+    auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = auraGrad;
+    ctx.fillRect(0, 0, gw, gh);
+
+    // Subtle Vignette Depth
+    const vig = ctx.createRadialGradient(gw * 0.5, gh * 0.5, gh * 0.25, gw * 0.5, gh * 0.5, gw * 0.9);
+    vig.addColorStop(0, 'rgba(0,0,0,0)');
+    vig.addColorStop(1, 'rgba(0,0,0,0.6)');
+    ctx.fillStyle = vig;
+    ctx.fillRect(0, 0, gw, gh);
+
+    // TOP ROYAL INDIGO PAPER LAYER (DIAGONAL TEAR CLIP MASK)
+    const pointsCount = noisePointsRef.current.length ? noisePointsRef.current.length - 1 : 30;
+    const topYBoundary = gh * 0.2;
+    const botYBoundary = gh * 0.8;
+    const cutX = t * gw;
+    const pathPoints: { x: number; y: number }[] = [];
+
+    for (let i = 0; i <= pointsCount; i++) {
+      const ratio = i / pointsCount;
+      const px = ratio * gw;
+      if (px > cutX + 0.5) break;
+      const py = topYBoundary + (botYBoundary - topYBoundary) * ratio;
+      const noiseVal = (noisePointsRef.current[i] ?? 0) * (8 * dpr);
+      pathPoints.push({ x: px, y: py + noiseVal });
+    }
+
+    if (pathPoints.length === 0) pathPoints.push({ x: 0, y: topYBoundary });
+
+    ctx.save();
+    const clipPath = new Path2D();
+    clipPath.moveTo(0, 0);
+    clipPath.lineTo(gw, 0);
+    clipPath.lineTo(gw, gh);
+    if (t < 0.999) {
+      clipPath.lineTo(cutX, gh);
+    } else {
+      clipPath.lineTo(gw, botYBoundary);
+    }
+
+    for (let i = pathPoints.length - 1; i >= 0; i--) {
+      clipPath.lineTo(pathPoints[i].x, pathPoints[i].y);
+    }
+    clipPath.lineTo(0, 0);
+    clipPath.closePath();
+    ctx.clip(clipPath);
+
+    // Royal Indigo Top Paper Canvas Gradient (#1E1035 -> #1E1B4B -> #2A2C4A)
+    const topPaperGrad = ctx.createLinearGradient(0, 0, gw, gh);
+    topPaperGrad.addColorStop(0, '#1E1035');
+    topPaperGrad.addColorStop(0.5, '#1E1B4B');
+    topPaperGrad.addColorStop(1, '#2A2C4A');
+    ctx.fillStyle = topPaperGrad;
+    ctx.fillRect(0, 0, gw, gh);
+
+    ctx.restore();
+
+    // RIPPED PAPER FIBER EDGES & 3D DEPTH SHADOWS
+    if (t > 0.001 && pathPoints.length > 1) {
+      const tearLine = new Path2D();
+      tearLine.moveTo(pathPoints[0].x, pathPoints[0].y);
+      for (let i = 1; i < pathPoints.length; i++) {
+        tearLine.lineTo(pathPoints[i].x, pathPoints[i].y);
       }
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        tearAnimationRef.current = requestAnimationFrame(renderCanvas);
-        return;
-      }
 
-      const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-      const rect = container.getBoundingClientRect();
-      const w = rect.width || container.clientWidth || 1280;
-      const h = rect.height || container.clientHeight || w * (9 / 16);
-      const gw = Math.floor(w * dpr);
-      const gh = Math.floor(h * dpr);
-
-      if (canvas.width !== gw || canvas.height !== gh) {
-        canvas.width = gw;
-        canvas.height = gh;
-      }
-
-      const state = tearProgressRef.current;
-      if (isPaperTearActive && state.phase === 'closed') {
-        state.phase = 'tearing';
-        state.phaseStart = timestamp;
-      }
-
-      if (state.phase === 'tearing') {
-        const elapsed = timestamp - state.phaseStart;
-        const dur = 1600;
-        const p = Math.min(1, elapsed / dur);
-        state.t = cubicEase(p);
-        if (p >= 1) {
-          state.phase = 'open';
-        }
-      }
-
-      ctx.clearRect(0, 0, gw, gh);
-
-      // BOTTOM REVEALED CANVAS LAYER (#0A0A0A / #08080C WITH NEON MAGENTA AURA)
-      ctx.fillStyle = '#08080c';
-      ctx.fillRect(0, 0, gw, gh);
-
-      // Neon Magenta-Pink Radial Glow (#FF1493 / #E91E8C)
-      const cx = gw * 0.7;
-      const cy = gh * 0.6;
-      const auraRadius = 600 * dpr * (w / 1280 ? Math.max(0.7, w / 1280) : 1);
-      const auraGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, auraRadius);
-      auraGrad.addColorStop(0, 'rgba(255, 20, 147, 0.95)');
-      auraGrad.addColorStop(0.2, 'rgba(233, 30, 140, 0.45)');
-      auraGrad.addColorStop(0.4, 'rgba(139, 92, 246, 0.18)');
-      auraGrad.addColorStop(0.7, 'rgba(255, 20, 147, 0.04)');
-      auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = auraGrad;
-      ctx.fillRect(0, 0, gw, gh);
-
-      // Subtle Vignette Depth
-      const vig = ctx.createRadialGradient(gw * 0.5, gh * 0.5, gh * 0.25, gw * 0.5, gh * 0.5, gw * 0.9);
-      vig.addColorStop(0, 'rgba(0,0,0,0)');
-      vig.addColorStop(1, 'rgba(0,0,0,0.6)');
-      ctx.fillStyle = vig;
-      ctx.fillRect(0, 0, gw, gh);
-
-      // TOP ROYAL INDIGO PAPER LAYER (DIAGONAL TEAR CLIP MASK)
-      const pointsCount = noisePointsRef.current.length ? noisePointsRef.current.length - 1 : 30;
-      const topYBoundary = gh * 0.2;
-      const botYBoundary = gh * 0.8;
-      const cutX = state.t * gw;
-      const pathPoints: { x: number; y: number }[] = [];
-
-      for (let i = 0; i <= pointsCount; i++) {
-        const ratio = i / pointsCount;
-        const px = ratio * gw;
-        if (px > cutX + 0.5) break;
-        const py = topYBoundary + (botYBoundary - topYBoundary) * ratio;
-        const noiseVal = (noisePointsRef.current[i] ?? 0) * (8 * dpr);
-        pathPoints.push({ x: px, y: py + noiseVal });
-      }
-
-      if (pathPoints.length === 0) pathPoints.push({ x: 0, y: topYBoundary });
-
+      // Heavy Cast Drop Shadow
       ctx.save();
-      const clipPath = new Path2D();
-      clipPath.moveTo(0, 0);
-      clipPath.lineTo(gw, 0);
-      clipPath.lineTo(gw, gh);
-      if (state.t < 0.999) {
-        clipPath.lineTo(cutX, gh);
-      } else {
-        clipPath.lineTo(gw, botYBoundary);
-      }
-
-      for (let i = pathPoints.length - 1; i >= 0; i--) {
-        clipPath.lineTo(pathPoints[i].x, pathPoints[i].y);
-      }
-      clipPath.lineTo(0, 0);
-      clipPath.closePath();
-      ctx.clip(clipPath);
-
-      // Royal Indigo Top Paper Canvas Gradient (#1E1035 -> #1E1B4B -> #2A2C4A)
-      const topPaperGrad = ctx.createLinearGradient(0, 0, gw, gh);
-      topPaperGrad.addColorStop(0, '#1E1035');
-      topPaperGrad.addColorStop(0.5, '#1E1B4B');
-      topPaperGrad.addColorStop(1, '#2A2C4A');
-      ctx.fillStyle = topPaperGrad;
-      ctx.fillRect(0, 0, gw, gh);
-
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.92)';
+      ctx.shadowBlur = 28 * dpr;
+      ctx.shadowOffsetY = 15 * dpr;
+      ctx.shadowOffsetX = 6 * dpr;
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+      ctx.lineWidth = 18 * dpr;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.stroke(tearLine);
       ctx.restore();
 
-      // RIPPED PAPER FIBER EDGES & 3D DEPTH SHADOWS
-      if (state.t > 0.001 && pathPoints.length > 1) {
-        const tearLine = new Path2D();
-        tearLine.moveTo(pathPoints[0].x, pathPoints[0].y);
-        for (let i = 1; i < pathPoints.length; i++) {
-          tearLine.lineTo(pathPoints[i].x, pathPoints[i].y);
-        }
+      // Inner Shadow Edge
+      ctx.save();
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.55)';
+      ctx.lineWidth = 10 * dpr;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.stroke(tearLine);
+      ctx.restore();
 
-        // Heavy Cast Drop Shadow
-        ctx.save();
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.92)';
-        ctx.shadowBlur = 28 * dpr;
-        ctx.shadowOffsetY = 15 * dpr;
-        ctx.shadowOffsetX = 6 * dpr;
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
-        ctx.lineWidth = 18 * dpr;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.stroke(tearLine);
-        ctx.restore();
+      // Cream Fibrous Paper Edge Highlight (#E8E0D5)
+      ctx.save();
+      ctx.strokeStyle = '#e8e0d5';
+      ctx.lineWidth = 3.2 * dpr;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+      ctx.stroke(tearLine);
+      ctx.restore();
 
-        // Inner Shadow Edge
-        ctx.save();
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.55)';
-        ctx.lineWidth = 10 * dpr;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.stroke(tearLine);
-        ctx.restore();
+      // Crisp White Fiber Outline
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+      ctx.lineWidth = 1.2 * dpr;
+      ctx.stroke(tearLine);
+      ctx.restore();
+    }
 
-        // Cream Fibrous Paper Edge Highlight (#E8E0D5)
-        ctx.save();
-        ctx.strokeStyle = '#e8e0d5';
-        ctx.lineWidth = 3.2 * dpr;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.stroke(tearLine);
-        ctx.restore();
-
-        // Crisp White Fiber Outline
-        ctx.save();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-        ctx.lineWidth = 1.2 * dpr;
-        ctx.stroke(tearLine);
-        ctx.restore();
-      }
-
-      tearAnimationRef.current = requestAnimationFrame(renderCanvas);
-    },
-    [isPaperTearActive]
-  );
+    tearAnimationRef.current = requestAnimationFrame(renderCanvas);
+  }, [tearProgress]);
 
   useEffect(() => {
     tearAnimationRef.current = requestAnimationFrame(renderCanvas);
@@ -267,21 +268,6 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       cancelAnimationFrame(tearAnimationRef.current);
     };
   }, [renderCanvas]);
-
-  // Track scroll progress for Phase 4 (Diagonal portrait transition)
-  const { scrollYProgress } = useScroll({
-    target: portraitSectionRef,
-    offset: ['start end', 'end start'],
-  });
-
-  const portraitX = useTransform(scrollYProgress, [0.1, 0.55], ['-45vw', '0vw']);
-  const portraitY = useTransform(scrollYProgress, [0.1, 0.55], ['40vh', '0vh']);
-  const portraitRotate = useTransform(scrollYProgress, [0.1, 0.55], [-16, 4]);
-  const portraitScale = useTransform(scrollYProgress, [0.1, 0.55], [0.72, 1.0]);
-  const portraitOpacity = useTransform(scrollYProgress, [0.08, 0.25, 0.55], [0, 1, 1]);
-
-  const textContentOpacity = useTransform(scrollYProgress, [0.25, 0.60], [0, 1]);
-  const textContentY = useTransform(scrollYProgress, [0.25, 0.60], [40, 0]);
 
   const triggerNextSentence = (nextIdx: number) => {
     if (revealTimerRef.current) clearInterval(revealTimerRef.current);
@@ -315,18 +301,14 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   };
 
   const handleTap = () => {
-    if (isRevealing) return;
-    if (!isStatementScreen) {
-      triggerNextSentence(sentenceIdx + 1);
-    } else if (!isPaperTearActive) {
-      setIsPaperTearActive(true);
-    }
+    if (isRevealing || isStatementScreen) return;
+    triggerNextSentence(sentenceIdx + 1);
   };
 
   return (
     <div
       ref={containerRef}
-      className={`relative w-full ${isStatementScreen ? 'min-h-[280vh]' : 'h-[100dvh] overflow-hidden'} bg-[#08080c] select-none touch-pan-y`}
+      className={`relative w-full ${isStatementScreen ? 'min-h-[300vh]' : 'h-[100dvh] overflow-hidden'} bg-[#08080c] select-none touch-pan-y`}
     >
       {/* EXPANDING CENTRAL CIRCULAR AURA DOT */}
       <motion.div
@@ -405,11 +387,8 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       )}
 
       {/* PHASE 2: STATISTICAL STATEMENT FOLD */}
-      {isStatementScreen && !isPaperTearActive && (
-        <section
-          onClick={handleTap}
-          className="relative z-20 w-full min-h-[100dvh] flex items-center justify-center p-5 sm:p-12 overflow-hidden cursor-pointer"
-        >
+      {isStatementScreen && (
+        <section className="relative z-20 w-full min-h-[100dvh] flex items-center justify-center p-5 sm:p-12 overflow-hidden">
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 25 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -452,7 +431,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
             </motion.div>
           </motion.div>
 
-          {/* TAP TO TEAR PAPER INSTRUCTION */}
+          {/* SCROLL DOWN CUE FOR PHASE 3 HERO PORTRAIT */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -460,40 +439,21 @@ export const ScrollPaperTearOverlay: React.FC = () => {
             className="absolute bottom-8 sm:bottom-10 left-0 right-0 text-center pointer-events-none flex flex-col items-center justify-center gap-2 z-30"
           >
             <span className="font-mono-meta text-[10px] sm:text-[11px] text-pink-300 uppercase tracking-[0.3em] font-bold drop-shadow">
-              TAP ANYWHERE TO TEAR CANVAS
+              SCROLL DOWN FOR PORTRAIT
             </span>
             <motion.div
               animate={{ y: [0, 6, 0] }}
               transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
               className="text-pink-400 text-lg sm:text-xl font-light drop-shadow-md"
             >
-              ✂️
+              ↓
             </motion.div>
           </motion.div>
         </section>
       )}
 
-      {/* PHASE 3: PROGRAMMATIC CANVAS PAPER TEAR ANIMATION SHOWCASE */}
-      {isPaperTearActive && (
-        <section className="relative z-20 w-full min-h-[100dvh] flex flex-col items-center justify-center p-4 sm:p-8 overflow-hidden">
-          <div
-            ref={canvasContainerRef}
-            className="relative w-full max-w-[1280px] aspect-[16/9] rounded-[24px] overflow-hidden bg-[#08080c] shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_24px_80px_-24px_rgba(0,0,0,0.9),0_0_120px_-40px_rgba(255,20,147,0.35)]"
-          >
-            <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block" />
-          </div>
-
-          <div className="mt-8 text-center pointer-events-none">
-            <span className="font-mono-meta text-[11px] text-pink-300 uppercase tracking-[0.3em] font-bold drop-shadow">
-              SCROLL DOWN TO REVEAL PORTFOLIO
-            </span>
-            <div className="text-pink-400 text-xl font-light mt-1">↓</div>
-          </div>
-        </section>
-      )}
-
-      {/* PHASE 4: HERO POLAROID PORTRAIT DIAGONAL ENTRANCE SECTION */}
-      {isPaperTearActive && (
+      {/* PHASE 3: HERO POLAROID PORTRAIT DIAGONAL ENTRANCE SECTION */}
+      {isStatementScreen && (
         <section
           ref={portraitSectionRef}
           className="relative z-20 w-full min-h-[120vh] px-6 sm:px-14 md:px-24 py-20 flex items-center justify-center overflow-hidden"
@@ -603,6 +563,20 @@ export const ScrollPaperTearOverlay: React.FC = () => {
                   </div>
                 </div>
               </motion.div>
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* PHASE 4: PROGRAMMATIC CANVAS PAPER TEAR ANIMATION SHOWCASE (SCROLL DRIVEN AFTER HERO PORTRAIT) */}
+      {isStatementScreen && (
+        <section
+          ref={tearSectionRef}
+          className="relative z-20 w-full min-h-[140vh] flex flex-col items-center justify-center p-4 sm:p-8 overflow-hidden"
+        >
+          <div className="sticky top-[10vh] w-full max-w-[1280px] aspect-[16/9] rounded-[24px] overflow-hidden bg-[#08080c] shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_24px_80px_-24px_rgba(0,0,0,0.9),0_0_120px_-40px_rgba(255,20,147,0.35)]">
+            <div ref={canvasContainerRef} className="relative w-full h-full">
+              <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block" />
             </div>
           </div>
         </section>
