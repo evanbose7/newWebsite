@@ -108,8 +108,8 @@ export const ScrollPaperTearOverlay: React.FC = () => {
     offset: ['start start', 'end end'],
   });
 
-  // PRECISE START CALIBRATION: Paper tear STARTS at scrollbar position ~0.44 (matching red mark in uploaded screenshot)
-  const tearProgress = useTransform(tearScrollProgress, [0.44, 0.90], [0, 1]);
+  // EXACT START & END CALIBRATION: Starts at ~0.44 and ENDS at ~0.78 (matching red mark in uploaded screenshot)
+  const tearProgress = useTransform(tearScrollProgress, [0.44, 0.78], [0, 1]);
 
   // Cubic Easing Function for Natural Physical Paper Resistance
   const cubicEase = (v: number) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
@@ -616,7 +616,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (STARTS AT EXACT SCROLLBAR POSITION ~0.44 MATCHING UPLOADED SCREENSHOT) */}
+      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (ENDS AT EXACT SCROLLBAR POSITION ~0.78 MATCHING LATEST UPLOADED SCREENSHOT) */}
       {isStatementScreen && (
         <section
           ref={tearSectionRef}
