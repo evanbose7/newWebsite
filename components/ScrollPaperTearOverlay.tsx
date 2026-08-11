@@ -168,7 +168,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
     ctx.fillStyle = vig;
     ctx.fillRect(0, 0, gw, gh);
 
-    // TOP ROYAL INDIGO PAPER LAYER (SEAMLESS BLEND WITH ORIGINAL HERO BACKGROUND)
+    // TOP ROYAL INDIGO PAPER LAYER (SEAMLESS BLEND WITH ZERO HORIZONTAL LINE)
     const pointsCount = noisePointsRef.current.length ? noisePointsRef.current.length - 1 : 30;
     const cutX = t * (gw * 1.5); // Sweeps 100% past the screen when t = 1
     const pathPoints: { x: number; y: number }[] = [];
@@ -201,23 +201,31 @@ export const ScrollPaperTearOverlay: React.FC = () => {
     // 1. Original Hero Linear Background Gradient (#1E1035 -> #1E1B4B -> #171233)
     const topPaperGrad = ctx.createLinearGradient(0, 0, 0, gh);
     topPaperGrad.addColorStop(0, '#1E1035');
-    topPaperGrad.addColorStop(0.5, '#1E1B4B');
+    topPaperGrad.addColorStop(0.4, '#1E1B4B');
     topPaperGrad.addColorStop(1, '#171233');
     ctx.fillStyle = topPaperGrad;
     ctx.fillRect(0, 0, gw, gh);
 
-    // 2. Original Central Royal Aura Radial Atmosphere Overlay (#EC4899 -> #8B5CF6 -> #3B82F6 -> #1E1B4B -> #171233)
+    // 2. Original Central Royal Aura Radial Atmosphere Overlay (#EC4899 -> #8B5CF6 -> #3B82F6)
     const topAuraCx = gw * 0.5;
-    const topAuraCy = gh * 0.5;
+    const topAuraCy = gh * 0.4;
     const topAuraRadius = Math.max(gw, gh) * 0.65;
     const topAuraGrad = ctx.createRadialGradient(topAuraCx, topAuraCy, 0, topAuraCx, topAuraCy, topAuraRadius);
-    topAuraGrad.addColorStop(0, 'rgba(236, 72, 153, 0.7)');
-    topAuraGrad.addColorStop(0.25, 'rgba(139, 92, 246, 0.5)');
-    topAuraGrad.addColorStop(0.5, 'rgba(59, 130, 246, 0.35)');
-    topAuraGrad.addColorStop(0.82, 'rgba(30, 27, 75, 0.2)');
+    topAuraGrad.addColorStop(0, 'rgba(236, 72, 153, 0.75)');
+    topAuraGrad.addColorStop(0.3, 'rgba(139, 92, 246, 0.55)');
+    topAuraGrad.addColorStop(0.6, 'rgba(59, 130, 246, 0.35)');
+    topAuraGrad.addColorStop(0.85, 'rgba(30, 27, 75, 0.15)');
     topAuraGrad.addColorStop(1, 'rgba(23, 18, 51, 0)');
     ctx.fillStyle = topAuraGrad;
     ctx.fillRect(0, 0, gw, gh);
+
+    // 3. Top Edge Soft Feathering (Smoothly dissolves y=0 to y=120px to eliminate any hard horizontal seam line)
+    const topFeatherHeight = 140 * dpr;
+    const featherGrad = ctx.createLinearGradient(0, 0, 0, topFeatherHeight);
+    featherGrad.addColorStop(0, 'rgba(30, 16, 53, 1.0)');
+    featherGrad.addColorStop(1, 'rgba(30, 16, 53, 0.0)');
+    ctx.fillStyle = featherGrad;
+    ctx.fillRect(0, 0, gw, topFeatherHeight);
 
     ctx.restore();
 
@@ -577,13 +585,13 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (TOP PAPER SEAMLESSLY BLENDS WITH ORIGINAL HERO BACKGROUND) */}
+      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (SOFT TOP FEATHER BLEND ELIMINATES HORIZONTAL SEAM) */}
       {isStatementScreen && (
         <section
           ref={tearSectionRef}
           className="relative z-20 w-full min-h-[250vh] overflow-hidden"
         >
-          <div className="sticky top-0 left-0 w-full h-[100dvh] h-screen overflow-hidden bg-[#08080c]">
+          <div className="sticky top-0 left-0 w-full h-[100dvh] h-screen overflow-hidden bg-transparent">
             <div ref={canvasContainerRef} className="relative w-full h-full">
               <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block pointer-events-none" />
             </div>
