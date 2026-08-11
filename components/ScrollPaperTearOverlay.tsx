@@ -168,7 +168,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
     ctx.fillStyle = vig;
     ctx.fillRect(0, 0, gw, gh);
 
-    // TOP ROYAL INDIGO PAPER LAYER (EDGE-TO-EDGE DIAGONAL TEAR CLIP MASK)
+    // TOP ROYAL INDIGO PAPER LAYER (SEAMLESS BLEND WITH ORIGINAL HERO BACKGROUND)
     const pointsCount = noisePointsRef.current.length ? noisePointsRef.current.length - 1 : 30;
     const cutX = t * (gw * 1.5); // Sweeps 100% past the screen when t = 1
     const pathPoints: { x: number; y: number }[] = [];
@@ -198,12 +198,25 @@ export const ScrollPaperTearOverlay: React.FC = () => {
     clipPath.closePath();
     ctx.clip(clipPath);
 
-    // Royal Indigo Top Paper Canvas Gradient (#1E1035 -> #1E1B4B -> #2A2C4A)
-    const topPaperGrad = ctx.createLinearGradient(0, 0, gw, gh);
+    // 1. Original Hero Linear Background Gradient (#1E1035 -> #1E1B4B -> #171233)
+    const topPaperGrad = ctx.createLinearGradient(0, 0, 0, gh);
     topPaperGrad.addColorStop(0, '#1E1035');
     topPaperGrad.addColorStop(0.5, '#1E1B4B');
-    topPaperGrad.addColorStop(1, '#2A2C4A');
+    topPaperGrad.addColorStop(1, '#171233');
     ctx.fillStyle = topPaperGrad;
+    ctx.fillRect(0, 0, gw, gh);
+
+    // 2. Original Central Royal Aura Radial Atmosphere Overlay (#EC4899 -> #8B5CF6 -> #3B82F6 -> #1E1B4B -> #171233)
+    const topAuraCx = gw * 0.5;
+    const topAuraCy = gh * 0.5;
+    const topAuraRadius = Math.max(gw, gh) * 0.65;
+    const topAuraGrad = ctx.createRadialGradient(topAuraCx, topAuraCy, 0, topAuraCx, topAuraCy, topAuraRadius);
+    topAuraGrad.addColorStop(0, 'rgba(236, 72, 153, 0.7)');
+    topAuraGrad.addColorStop(0.25, 'rgba(139, 92, 246, 0.5)');
+    topAuraGrad.addColorStop(0.5, 'rgba(59, 130, 246, 0.35)');
+    topAuraGrad.addColorStop(0.82, 'rgba(30, 27, 75, 0.2)');
+    topAuraGrad.addColorStop(1, 'rgba(23, 18, 51, 0)');
+    ctx.fillStyle = topAuraGrad;
     ctx.fillRect(0, 0, gw, gh);
 
     ctx.restore();
@@ -564,7 +577,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (STARTS LATER ONLY WHEN USER SCROLLS DOWN PAST HERO PORTRAIT) */}
+      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (TOP PAPER SEAMLESSLY BLENDS WITH ORIGINAL HERO BACKGROUND) */}
       {isStatementScreen && (
         <section
           ref={tearSectionRef}
