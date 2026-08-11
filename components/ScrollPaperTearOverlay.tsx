@@ -49,27 +49,29 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   const isLastSentence = sentenceIdx === SEQUENCE_WORDS.length - 1;
   const isSentenceComplete = visibleCount >= currentWords.length;
 
-  // Initialize Lenis 60 FPS Inertia Smooth Scroll
+  // Initialize Lenis ONLY on desktop pointer devices to keep mobile scrolling 100% native 60 FPS
   useEffect(() => {
-    const lenis = new Lenis({
-      duration: 1.2,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
-      smoothWheel: true,
-      wheelMultiplier: 1.0,
-      touchMultiplier: 1.5,
-    });
+    if (typeof window !== 'undefined' && window.matchMedia('(pointer: fine)').matches) {
+      const lenis = new Lenis({
+        duration: 1.0,
+        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+        smoothWheel: true,
+        wheelMultiplier: 1.0,
+        syncTouch: false,
+      });
 
-    let rafId: number;
-    function raf(time: number) {
-      lenis.raf(time);
+      let rafId: number;
+      const raf = (time: number) => {
+        lenis.raf(time);
+        rafId = requestAnimationFrame(raf);
+      };
       rafId = requestAnimationFrame(raf);
-    }
-    rafId = requestAnimationFrame(raf);
 
-    return () => {
-      cancelAnimationFrame(rafId);
-      lenis.destroy();
-    };
+      return () => {
+        cancelAnimationFrame(rafId);
+        lenis.destroy();
+      };
+    }
   }, []);
 
   // Track native scroll progress relative to container
@@ -78,22 +80,22 @@ export const ScrollPaperTearOverlay: React.FC = () => {
     offset: ['start start', 'end start'],
   });
 
-  // VIBRANT ROYAL BLUE-PURPLE RADIAL AURA EXPANSION (HARDWARE ACCELERATED)
-  const auraScale = useTransform(scrollYProgress, [0, 0.45], [0, 6.0]);
+  // HIGH-PERFORMANCE GPU TRANSFORMATIONS (OPTIMIZED FOR MOBILE PHONES)
+  const auraScale = useTransform(scrollYProgress, [0, 0.45], [0, 5.5]);
   const auraOpacity = useTransform(scrollYProgress, [0, 0.05, 0.45, 1], [0, 1, 1, 1]);
 
-  // Hero Text motion (dissolves cleanly)
-  const heroTextScale = useTransform(scrollYProgress, [0, 0.22], [1, 1.06]);
+  // Hero Text motion
+  const heroTextScale = useTransform(scrollYProgress, [0, 0.22], [1, 1.05]);
   const heroTextOpacity = useTransform(scrollYProgress, [0, 0.18], [1, 0]);
-  const heroTextY = useTransform(scrollYProgress, [0, 0.22], [0, -50]);
+  const heroTextY = useTransform(scrollYProgress, [0, 0.22], [0, -40]);
 
   // Scroll indicator arrow opacity
   const arrowOpacity = useTransform(scrollYProgress, [0, 0.08], [1, 0]);
 
   // Statement text scroll fade motion
-  const statementScale = useTransform(scrollYProgress, [0.22, 0.48], [0.96, 1]);
-  const statementOpacity = useTransform(scrollYProgress, [0.20, 0.45], [0, 1]);
-  const statementY = useTransform(scrollYProgress, [0.22, 0.48], [30, 0]);
+  const statementScale = useTransform(scrollYProgress, [0.20, 0.45], [0.97, 1]);
+  const statementOpacity = useTransform(scrollYProgress, [0.18, 0.42], [0, 1]);
+  const statementY = useTransform(scrollYProgress, [0.20, 0.45], [25, 0]);
 
   const triggerNextSentence = (nextIdx: number) => {
     if (revealTimerRef.current) clearInterval(revealTimerRef.current);
@@ -135,33 +137,23 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   return (
     <div
       ref={containerRef}
-      className={`relative w-full ${isLastSentence && isSentenceComplete ? 'min-h-[220vh]' : 'min-h-screen'} bg-black`}
+      className={`relative w-full ${isLastSentence && isSentenceComplete ? 'min-h-[220vh]' : 'min-h-[100dvh]'} bg-black touch-pan-y`}
     >
-      {/* STICKY FULL-VIEWPORT CANVAS */}
-      <div className="sticky top-0 w-full h-screen overflow-hidden flex items-center justify-center bg-black z-10">
-        {/* SEAMLESS FULL-SCREEN VIBRANT ROYAL AURA EXPANSION LAYER */}
+      {/* STICKY FULL-VIEWPORT CANVAS WITH MOBILE DVH STABILITY */}
+      <div className="sticky top-0 w-full h-[100dvh] h-screen overflow-hidden flex items-center justify-center bg-black z-10">
+        {/* LIGHTWEIGHT HIGH-PERFORMANCE NATIVE RADIAL AURA (NO HEAVY BLUR FILTER FOR 60 FPS MOBILE) */}
         <motion.div
           style={{
             scale: auraScale,
             opacity: auraOpacity,
           }}
-          className="absolute w-[600px] h-[600px] rounded-full pointer-events-none z-0 bg-[radial-gradient(circle,_#EC4899_0%,_#8B5CF6_25%,_#3B82F6_50%,_#1E1B4B_75%,_#0F172A_92%,_#000000_100%)] blur-2xl shadow-[0_0_200px_rgba(236,72,153,0.9)] transform-gpu will-change-transform"
+          className="absolute w-[500px] h-[500px] sm:w-[600px] sm:h-[600px] rounded-full pointer-events-none z-0 bg-[radial-gradient(circle,_#EC4899_0%,_#8B5CF6_25%,_#3B82F6_50%,_#1E1B4B_75%,_#0B0F19_100%)] transform-gpu will-change-transform"
         />
 
-        {/* Dynamic Glowing Ambient Atmosphere Fill */}
+        {/* Dynamic Ambient Atmosphere Fill */}
         <motion.div
           style={{ opacity: auraOpacity }}
-          className="absolute inset-0 w-full h-full pointer-events-none z-0 bg-gradient-to-b from-[#0F172A]/50 via-[#1E1B4B]/80 to-[#0B0F19] transform-gpu"
-        />
-
-        {/* Ambient Neon Floating Glow Orbs */}
-        <motion.div
-          style={{ opacity: auraOpacity }}
-          className="absolute top-1/3 left-1/4 w-[450px] h-[450px] rounded-full bg-[#EC4899]/30 blur-[130px] pointer-events-none z-0 animate-pulse transform-gpu"
-        />
-        <motion.div
-          style={{ opacity: auraOpacity }}
-          className="absolute bottom-1/3 right-1/4 w-[450px] h-[450px] rounded-full bg-[#00F2FE]/30 blur-[130px] pointer-events-none z-0 transform-gpu"
+          className="absolute inset-0 w-full h-full pointer-events-none z-0 bg-gradient-to-b from-[#0F172A]/60 via-[#1E1B4B]/80 to-[#0B0F19] transform-gpu"
         />
 
         {/* STAGE 1: CENTERED KINETIC TYPOGRAPHY REVEAL HERO TEXT */}
@@ -173,9 +165,9 @@ export const ScrollPaperTearOverlay: React.FC = () => {
             y: heroTextY,
             pointerEvents: isLastSentence && isSentenceComplete ? 'none' : 'auto',
           }}
-          className="relative z-20 w-full max-w-5xl mx-auto text-center flex items-center justify-center p-6 cursor-pointer select-none transform-gpu"
+          className="relative z-20 w-full max-w-5xl mx-auto text-center flex items-center justify-center p-5 sm:p-6 cursor-pointer select-none transform-gpu"
         >
-          <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-center leading-tight flex flex-wrap items-center justify-center gap-x-3.5 sm:gap-x-5 gap-y-2 select-none font-editorial">
+          <h1 className="text-3xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-center leading-tight flex flex-wrap items-center justify-center gap-x-3 sm:gap-x-5 gap-y-2 select-none font-editorial">
             {currentWords.slice(0, visibleCount).map((wordObj, i) => {
               const isEmphasized = wordObj.isEmphasized;
 
@@ -185,12 +177,12 @@ export const ScrollPaperTearOverlay: React.FC = () => {
                   initial={{ opacity: 0, scale: 0.97 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{
-                    duration: 0.2,
+                    duration: 0.18,
                     ease: [0.16, 1, 0.3, 1],
                   }}
                   className={
                     isEmphasized
-                      ? 'font-extrabold text-[#FF3B30] tracking-wider relative inline-block uppercase drop-shadow-[0_0_20px_rgba(255,59,48,0.6)]'
+                      ? 'font-extrabold text-[#FF3B30] tracking-wider relative inline-block uppercase drop-shadow-[0_0_15px_rgba(255,59,48,0.6)]'
                       : 'text-white font-semibold inline-block drop-shadow-md'
                   }
                 >
@@ -201,29 +193,29 @@ export const ScrollPaperTearOverlay: React.FC = () => {
           </h1>
         </motion.div>
 
-        {/* ELEGANT SCROLL CUE ARROW (Fades out when scrolling begins) */}
+        {/* ELEGANT SCROLL CUE ARROW */}
         {isLastSentence && isSentenceComplete && (
           <motion.div
             style={{ opacity: arrowOpacity }}
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="absolute bottom-10 left-0 right-0 text-center pointer-events-none flex flex-col items-center justify-center gap-2 z-30"
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="absolute bottom-8 sm:bottom-10 left-0 right-0 text-center pointer-events-none flex flex-col items-center justify-center gap-2 z-30"
           >
-            <span className="font-mono-meta text-[11px] text-pink-300 uppercase tracking-[0.3em] font-bold drop-shadow">
+            <span className="font-mono-meta text-[10px] sm:text-[11px] text-pink-300 uppercase tracking-[0.3em] font-bold drop-shadow">
               SCROLL DOWN
             </span>
             <motion.div
-              animate={{ y: [0, 8, 0] }}
-              transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-              className="text-pink-400 text-xl font-light drop-shadow-md"
+              animate={{ y: [0, 6, 0] }}
+              transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+              className="text-pink-400 text-lg sm:text-xl font-light drop-shadow-md"
             >
               ↓
             </motion.div>
           </motion.div>
         )}
 
-        {/* STAGE 2: 100% BRIGHT SOLID TARGET STATEMENT WITH SMOOTH FLOATING ANIMATION */}
+        {/* STAGE 2: 100% BRIGHT SOLID TARGET STATEMENT WITH SMOOTH MOBILE-OPTIMIZED FLOAT */}
         {isLastSentence && isSentenceComplete && (
           <motion.div
             style={{
@@ -231,42 +223,42 @@ export const ScrollPaperTearOverlay: React.FC = () => {
               scale: statementScale,
               y: statementY,
             }}
-            className="absolute inset-0 z-20 flex items-center justify-center p-6 sm:p-12 pointer-events-none transform-gpu"
+            className="absolute inset-0 z-20 flex items-center justify-center p-5 sm:p-12 pointer-events-none transform-gpu"
           >
-            {/* GENTLE CONTINUOUS FLOATING CONTAINER (60 FPS) */}
+            {/* CONTINUOUS SILKY FLOATING CONTAINER (HARDWARE ACCELERATED) */}
             <motion.div
               animate={{
-                y: [-8, 8, -8],
+                y: [-6, 6, -6],
               }}
               transition={{
-                duration: 5,
+                duration: 4.5,
                 repeat: Infinity,
                 ease: 'easeInOut',
               }}
-              className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center justify-center gap-6 sm:gap-8 transform-gpu"
+              className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center justify-center gap-5 sm:gap-8 transform-gpu"
             >
               {/* Luminous Neon Pill Badge */}
-              <div className="inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full bg-[#EC4899]/30 border-2 border-[#EC4899] shadow-[0_0_30px_rgba(236,72,153,0.9)] backdrop-blur-xl">
-                <span className="w-2.5 h-2.5 rounded-full bg-[#FFD600] animate-ping" />
-                <span className="font-dmsans text-xs sm:text-sm uppercase tracking-[0.35em] font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.9)]">
+              <div className="inline-flex items-center gap-2 sm:gap-2.5 px-4 py-2 sm:px-6 sm:py-2.5 rounded-full bg-[#EC4899]/30 border-2 border-[#EC4899] shadow-[0_0_20px_rgba(236,72,153,0.8)] backdrop-blur-md">
+                <span className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-[#FFD600] animate-ping" />
+                <span className="font-dmsans text-[10px] sm:text-sm uppercase tracking-[0.3em] sm:tracking-[0.35em] font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.9)]">
                   STATISTICAL OBSERVATION
                 </span>
               </div>
 
               {/* 100% Solid Pure White & Neon Glowing Statement Typography */}
-              <h2 className="font-playfair text-4xl sm:text-6xl md:text-7xl font-black text-white leading-[1.2] tracking-tight drop-shadow-[0_0_35px_rgba(255,255,255,0.95)]">
+              <h2 className="font-playfair text-2xl sm:text-6xl md:text-7xl font-black text-white leading-[1.28] sm:leading-[1.2] tracking-tight drop-shadow-[0_0_25px_rgba(255,255,255,0.9)]">
                 &ldquo;do you know tht{' '}
-                <span className="text-[#FFD600] font-black drop-shadow-[0_0_30px_rgba(255,214,0,1)]">
+                <span className="text-[#FFD600] font-black drop-shadow-[0_0_25px_rgba(255,214,0,1)]">
                   50% people
                 </span>{' '}
                 are poor is india because they dont have money above the{' '}
-                <span className="text-[#00F5FF] underline decoration-[#00F5FF] decoration-4 underline-offset-8 font-black drop-shadow-[0_0_30px_rgba(0,245,255,1)]">
+                <span className="text-[#00F5FF] underline decoration-[#00F5FF] decoration-2 sm:decoration-4 underline-offset-4 sm:underline-offset-8 font-black drop-shadow-[0_0_25px_rgba(0,245,255,1)]">
                   poverty line
                 </span>&rdquo;
               </h2>
 
               {/* Luminous Laser Accent Bar */}
-              <div className="w-36 h-2 bg-gradient-to-r from-[#FF2E93] via-[#FFD600] to-[#00F5FF] rounded-full shadow-[0_0_30px_rgba(0,245,255,1)] mt-2 animate-pulse" />
+              <div className="w-24 sm:w-36 h-1.5 sm:h-2 bg-gradient-to-r from-[#FF2E93] via-[#FFD600] to-[#00F5FF] rounded-full shadow-[0_0_25px_rgba(0,245,255,1)] mt-1 sm:mt-2 animate-pulse" />
             </motion.div>
           </motion.div>
         )}
