@@ -100,18 +100,18 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   const textContentOpacity = useTransform(portraitScrollProgress, [0.25, 0.60], [0, 1]);
   const textContentY = useTransform(portraitScrollProgress, [0.25, 0.60], [40, 0]);
 
-  // Track scroll progress for Phase 4 (Paper Tear Section AFTER Hero Portrait)
+  // Track scroll progress for Phase 4 (Full-Screen Paper Tear Section AFTER Hero Portrait)
   const { scrollYProgress: tearScrollProgress } = useScroll({
     target: tearSectionRef,
     offset: ['start end', 'end start'],
   });
 
-  const tearProgress = useTransform(tearScrollProgress, [0.15, 0.75], [0, 1]);
+  const tearProgress = useTransform(tearScrollProgress, [0.15, 0.85], [0, 1]);
 
   // Cubic Easing Function for Natural Physical Paper Resistance
   const cubicEase = (v: number) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
 
-  // High-Performance 60 FPS Canvas Paper Tear Renderer driven by scroll
+  // High-Performance 60 FPS FULL-SCREEN Canvas Paper Tear Renderer
   const renderCanvas = useCallback(() => {
     const canvas = canvasRef.current;
     const container = canvasContainerRef.current;
@@ -127,8 +127,8 @@ export const ScrollPaperTearOverlay: React.FC = () => {
 
     const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
     const rect = container.getBoundingClientRect();
-    const w = rect.width || container.clientWidth || 1280;
-    const h = rect.height || container.clientHeight || w * (9 / 16);
+    const w = rect.width || container.clientWidth || window.innerWidth;
+    const h = rect.height || container.clientHeight || window.innerHeight;
     const gw = Math.floor(w * dpr);
     const gh = Math.floor(h * dpr);
 
@@ -142,58 +142,52 @@ export const ScrollPaperTearOverlay: React.FC = () => {
 
     ctx.clearRect(0, 0, gw, gh);
 
-    // BOTTOM REVEALED CANVAS LAYER (#08080C WITH NEON MAGENTA AURA)
+    // BOTTOM REVEALED FULLSCREEN CANVAS LAYER (#08080C WITH NEON MAGENTA AURA)
     ctx.fillStyle = '#08080c';
     ctx.fillRect(0, 0, gw, gh);
 
-    // Neon Magenta-Pink Radial Glow (#FF1493 / #E91E8C)
+    // Full-Screen Neon Magenta-Pink Radial Glow (#FF1493 / #E91E8C)
     const cx = gw * 0.7;
-    const cy = gh * 0.6;
-    const auraRadius = 600 * dpr * (w / 1280 ? Math.max(0.7, w / 1280) : 1);
+    const cy = gh * 0.5;
+    const auraRadius = Math.max(gw, gh) * 0.8;
     const auraGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, auraRadius);
     auraGrad.addColorStop(0, 'rgba(255, 20, 147, 0.95)');
-    auraGrad.addColorStop(0.2, 'rgba(233, 30, 140, 0.45)');
-    auraGrad.addColorStop(0.4, 'rgba(139, 92, 246, 0.18)');
-    auraGrad.addColorStop(0.7, 'rgba(255, 20, 147, 0.04)');
+    auraGrad.addColorStop(0.25, 'rgba(233, 30, 140, 0.5)');
+    auraGrad.addColorStop(0.5, 'rgba(139, 92, 246, 0.2)');
+    auraGrad.addColorStop(0.75, 'rgba(255, 20, 147, 0.05)');
     auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
     ctx.fillStyle = auraGrad;
     ctx.fillRect(0, 0, gw, gh);
 
-    // Subtle Vignette Depth
-    const vig = ctx.createRadialGradient(gw * 0.5, gh * 0.5, gh * 0.25, gw * 0.5, gh * 0.5, gw * 0.9);
+    // Subtle Fullscreen Vignette Depth
+    const vig = ctx.createRadialGradient(gw * 0.5, gh * 0.5, gh * 0.2, gw * 0.5, gh * 0.5, Math.max(gw, gh) * 0.75);
     vig.addColorStop(0, 'rgba(0,0,0,0)');
-    vig.addColorStop(1, 'rgba(0,0,0,0.6)');
+    vig.addColorStop(1, 'rgba(0,0,0,0.65)');
     ctx.fillStyle = vig;
     ctx.fillRect(0, 0, gw, gh);
 
-    // TOP ROYAL INDIGO PAPER LAYER (DIAGONAL TEAR CLIP MASK)
+    // TOP ROYAL INDIGO PAPER LAYER (EDGE-TO-EDGE DIAGONAL TEAR CLIP MASK)
     const pointsCount = noisePointsRef.current.length ? noisePointsRef.current.length - 1 : 30;
-    const topYBoundary = gh * 0.2;
-    const botYBoundary = gh * 0.8;
-    const cutX = t * gw;
+    const cutX = t * (gw * 1.5); // Sweeps 100% past the screen when t = 1
     const pathPoints: { x: number; y: number }[] = [];
 
     for (let i = 0; i <= pointsCount; i++) {
       const ratio = i / pointsCount;
-      const px = ratio * gw;
+      const px = ratio * (gw * 1.2);
       if (px > cutX + 0.5) break;
-      const py = topYBoundary + (botYBoundary - topYBoundary) * ratio;
-      const noiseVal = (noisePointsRef.current[i] ?? 0) * (8 * dpr);
+      const py = ratio * gh;
+      const noiseVal = (noisePointsRef.current[i] ?? 0) * (12 * dpr);
       pathPoints.push({ x: px, y: py + noiseVal });
     }
 
-    if (pathPoints.length === 0) pathPoints.push({ x: 0, y: topYBoundary });
+    if (pathPoints.length === 0) pathPoints.push({ x: 0, y: 0 });
 
     ctx.save();
     const clipPath = new Path2D();
     clipPath.moveTo(0, 0);
     clipPath.lineTo(gw, 0);
     clipPath.lineTo(gw, gh);
-    if (t < 0.999) {
-      clipPath.lineTo(cutX, gh);
-    } else {
-      clipPath.lineTo(gw, botYBoundary);
-    }
+    clipPath.lineTo(cutX, gh);
 
     for (let i = pathPoints.length - 1; i >= 0; i--) {
       clipPath.lineTo(pathPoints[i].x, pathPoints[i].y);
@@ -222,12 +216,12 @@ export const ScrollPaperTearOverlay: React.FC = () => {
 
       // Heavy Cast Drop Shadow
       ctx.save();
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.92)';
-      ctx.shadowBlur = 28 * dpr;
-      ctx.shadowOffsetY = 15 * dpr;
-      ctx.shadowOffsetX = 6 * dpr;
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
-      ctx.lineWidth = 18 * dpr;
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
+      ctx.shadowBlur = 32 * dpr;
+      ctx.shadowOffsetY = 18 * dpr;
+      ctx.shadowOffsetX = 8 * dpr;
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.95)';
+      ctx.lineWidth = 22 * dpr;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.stroke(tearLine);
@@ -235,8 +229,8 @@ export const ScrollPaperTearOverlay: React.FC = () => {
 
       // Inner Shadow Edge
       ctx.save();
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.55)';
-      ctx.lineWidth = 10 * dpr;
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
+      ctx.lineWidth = 12 * dpr;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.stroke(tearLine);
@@ -245,7 +239,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       // Cream Fibrous Paper Edge Highlight (#E8E0D5)
       ctx.save();
       ctx.strokeStyle = '#e8e0d5';
-      ctx.lineWidth = 3.2 * dpr;
+      ctx.lineWidth = 3.6 * dpr;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.stroke(tearLine);
@@ -253,8 +247,8 @@ export const ScrollPaperTearOverlay: React.FC = () => {
 
       // Crisp White Fiber Outline
       ctx.save();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-      ctx.lineWidth = 1.2 * dpr;
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+      ctx.lineWidth = 1.4 * dpr;
       ctx.stroke(tearLine);
       ctx.restore();
     }
@@ -308,7 +302,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   return (
     <div
       ref={containerRef}
-      className={`relative w-full ${isStatementScreen ? 'min-h-[300vh]' : 'h-[100dvh] overflow-hidden'} bg-[#08080c] select-none touch-pan-y`}
+      className={`relative w-full ${isStatementScreen ? 'min-h-[350vh]' : 'h-[100dvh] overflow-hidden'} bg-[#08080c] select-none touch-pan-y`}
     >
       {/* EXPANDING CENTRAL CIRCULAR AURA DOT */}
       <motion.div
@@ -568,15 +562,15 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 4: PROGRAMMATIC CANVAS PAPER TEAR ANIMATION SHOWCASE (SCROLL DRIVEN AFTER HERO PORTRAIT) */}
+      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (100% VIEWPORT EDGE-TO-EDGE) */}
       {isStatementScreen && (
         <section
           ref={tearSectionRef}
-          className="relative z-20 w-full min-h-[140vh] flex flex-col items-center justify-center p-4 sm:p-8 overflow-hidden"
+          className="relative z-20 w-full min-h-[220vh] overflow-hidden"
         >
-          <div className="sticky top-[10vh] w-full max-w-[1280px] aspect-[16/9] rounded-[24px] overflow-hidden bg-[#08080c] shadow-[0_0_0_1px_rgba(255,255,255,0.08),0_24px_80px_-24px_rgba(0,0,0,0.9),0_0_120px_-40px_rgba(255,20,147,0.35)]">
+          <div className="sticky top-0 left-0 w-full h-[100dvh] h-screen overflow-hidden bg-[#08080c]">
             <div ref={canvasContainerRef} className="relative w-full h-full">
-              <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block" />
+              <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block pointer-events-none" />
             </div>
           </div>
         </section>
