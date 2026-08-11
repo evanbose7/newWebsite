@@ -100,13 +100,14 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   const textContentOpacity = useTransform(portraitScrollProgress, [0.25, 0.60], [0, 1]);
   const textContentY = useTransform(portraitScrollProgress, [0.25, 0.60], [40, 0]);
 
-  // Track scroll progress for Phase 4 (Full-Screen Paper Tear Section AFTER Hero Portrait)
+  // Track scroll progress for Phase 4 (Paper Tear Section: Starts when scrollbar reaches MIDDLE)
   const { scrollYProgress: tearScrollProgress } = useScroll({
     target: tearSectionRef,
-    offset: ['start end', 'end start'],
+    offset: ['start start', 'end end'],
   });
 
-  const tearProgress = useTransform(tearScrollProgress, [0.15, 0.85], [0, 1]);
+  // Tear animation starts precisely at 0.45 (middle of scroll sequence)
+  const tearProgress = useTransform(tearScrollProgress, [0.45, 0.90], [0, 1]);
 
   // Cubic Easing Function for Natural Physical Paper Resistance
   const cubicEase = (v: number) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
@@ -302,7 +303,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   return (
     <div
       ref={containerRef}
-      className={`relative w-full ${isStatementScreen ? 'min-h-[350vh]' : 'h-[100dvh] overflow-hidden'} bg-[#08080c] select-none touch-pan-y`}
+      className={`relative w-full ${isStatementScreen ? 'min-h-[400vh]' : 'h-[100dvh] overflow-hidden'} bg-[#08080c] select-none touch-pan-y`}
     >
       {/* EXPANDING CENTRAL CIRCULAR AURA DOT */}
       <motion.div
@@ -562,11 +563,11 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (100% VIEWPORT EDGE-TO-EDGE) */}
+      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (STARTS PRECISELY WHEN SCROLLBAR REACHES THE MIDDLE) */}
       {isStatementScreen && (
         <section
           ref={tearSectionRef}
-          className="relative z-20 w-full min-h-[220vh] overflow-hidden"
+          className="relative z-20 w-full min-h-[250vh] overflow-hidden"
         >
           <div className="sticky top-0 left-0 w-full h-[100dvh] h-screen overflow-hidden bg-[#08080c]">
             <div ref={canvasContainerRef} className="relative w-full h-full">
