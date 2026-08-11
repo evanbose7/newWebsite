@@ -50,8 +50,9 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   const revealTimerRef = useRef<NodeJS.Timeout | null>(null);
   const tearAnimationRef = useRef<number>(0);
   const noisePointsRef = useRef<number[]>([]);
+  const pulseRef = useRef<number>(0);
 
-  // Seed procedural jagged points for authentic fibrous paper tear
+  // Seed procedural jagged points for authentic fibrous paper tear from artifact
   useEffect(() => {
     const points: number[] = [];
     let seed = 98765;
@@ -108,176 +109,215 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   });
 
   // Paper tear starts tearing LATE — strictly after user scrolls past the full hero portrait screen
-  const tearProgress = useTransform(tearScrollProgress, [0.05, 0.75], [0, 1]);
+  const tearProgress = useTransform(tearScrollProgress, [0.05, 0.85], [0, 1]);
 
   // Cubic Easing Function for Natural Physical Paper Resistance
   const cubicEase = (v: number) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
 
-  // High-Performance 60 FPS FULL-SCREEN Canvas Paper Tear Renderer
-  const renderCanvas = useCallback(() => {
-    const canvas = canvasRef.current;
-    const container = canvasContainerRef.current;
-    if (!canvas || !container) {
-      tearAnimationRef.current = requestAnimationFrame(renderCanvas);
-      return;
-    }
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      tearAnimationRef.current = requestAnimationFrame(renderCanvas);
-      return;
-    }
-
-    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
-    const rect = container.getBoundingClientRect();
-    const w = rect.width || container.clientWidth || window.innerWidth;
-    const h = rect.height || container.clientHeight || window.innerHeight;
-    const gw = Math.floor(w * dpr);
-    const gh = Math.floor(h * dpr);
-
-    if (canvas.width !== gw || canvas.height !== gh) {
-      canvas.width = gw;
-      canvas.height = gh;
-    }
-
-    const rawT = tearProgress.get();
-    const t = cubicEase(Math.max(0, Math.min(1, rawT)));
-
-    ctx.clearRect(0, 0, gw, gh);
-
-    // BOTTOM REVEALED FULLSCREEN CANVAS LAYER (#08080C WITH NEON MAGENTA AURA)
-    ctx.fillStyle = '#08080c';
-    ctx.fillRect(0, 0, gw, gh);
-
-    // Full-Screen Neon Magenta-Pink Radial Glow (#FF1493 / #E91E8C)
-    const cx = gw * 0.7;
-    const cy = gh * 0.5;
-    const auraRadius = Math.max(gw, gh) * 0.8;
-    const auraGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, auraRadius);
-    auraGrad.addColorStop(0, 'rgba(255, 20, 147, 0.95)');
-    auraGrad.addColorStop(0.25, 'rgba(233, 30, 140, 0.5)');
-    auraGrad.addColorStop(0.5, 'rgba(139, 92, 246, 0.2)');
-    auraGrad.addColorStop(0.75, 'rgba(255, 20, 147, 0.05)');
-    auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-    ctx.fillStyle = auraGrad;
-    ctx.fillRect(0, 0, gw, gh);
-
-    // Subtle Fullscreen Vignette Depth
-    const vig = ctx.createRadialGradient(gw * 0.5, gh * 0.5, gh * 0.2, gw * 0.5, gh * 0.5, Math.max(gw, gh) * 0.75);
-    vig.addColorStop(0, 'rgba(0,0,0,0)');
-    vig.addColorStop(1, 'rgba(0,0,0,0.65)');
-    ctx.fillStyle = vig;
-    ctx.fillRect(0, 0, gw, gh);
-
-    // TOP ROYAL INDIGO PAPER LAYER (SEAMLESS BLEND WITH ZERO HORIZONTAL LINE)
-    const pointsCount = noisePointsRef.current.length ? noisePointsRef.current.length - 1 : 30;
-    const cutX = t * (gw * 1.5); // Sweeps 100% past the screen when t = 1
-    const pathPoints: { x: number; y: number }[] = [];
-
-    for (let i = 0; i <= pointsCount; i++) {
-      const ratio = i / pointsCount;
-      const px = ratio * (gw * 1.2);
-      if (px > cutX + 0.5) break;
-      const py = ratio * gh;
-      const noiseVal = (noisePointsRef.current[i] ?? 0) * (12 * dpr);
-      pathPoints.push({ x: px, y: py + noiseVal });
-    }
-
-    if (pathPoints.length === 0) pathPoints.push({ x: 0, y: 0 });
-
-    ctx.save();
-    const clipPath = new Path2D();
-    clipPath.moveTo(0, 0);
-    clipPath.lineTo(gw, 0);
-    clipPath.lineTo(gw, gh);
-    clipPath.lineTo(cutX, gh);
-
-    for (let i = pathPoints.length - 1; i >= 0; i--) {
-      clipPath.lineTo(pathPoints[i].x, pathPoints[i].y);
-    }
-    clipPath.lineTo(0, 0);
-    clipPath.closePath();
-    ctx.clip(clipPath);
-
-    // 1. Original Hero Linear Background Gradient (#1E1035 -> #1E1B4B -> #171233)
-    const topPaperGrad = ctx.createLinearGradient(0, 0, 0, gh);
-    topPaperGrad.addColorStop(0, '#1E1035');
-    topPaperGrad.addColorStop(0.4, '#1E1B4B');
-    topPaperGrad.addColorStop(1, '#171233');
-    ctx.fillStyle = topPaperGrad;
-    ctx.fillRect(0, 0, gw, gh);
-
-    // 2. Original Central Royal Aura Radial Atmosphere Overlay (#EC4899 -> #8B5CF6 -> #3B82F6)
-    const topAuraCx = gw * 0.5;
-    const topAuraCy = gh * 0.4;
-    const topAuraRadius = Math.max(gw, gh) * 0.65;
-    const topAuraGrad = ctx.createRadialGradient(topAuraCx, topAuraCy, 0, topAuraCx, topAuraCy, topAuraRadius);
-    topAuraGrad.addColorStop(0, 'rgba(236, 72, 153, 0.75)');
-    topAuraGrad.addColorStop(0.3, 'rgba(139, 92, 246, 0.55)');
-    topAuraGrad.addColorStop(0.6, 'rgba(59, 130, 246, 0.35)');
-    topAuraGrad.addColorStop(0.85, 'rgba(30, 27, 75, 0.15)');
-    topAuraGrad.addColorStop(1, 'rgba(23, 18, 51, 0)');
-    ctx.fillStyle = topAuraGrad;
-    ctx.fillRect(0, 0, gw, gh);
-
-    // 3. Top Edge Soft Feathering (Smoothly dissolves y=0 to y=120px to eliminate any hard horizontal seam line)
-    const topFeatherHeight = 140 * dpr;
-    const featherGrad = ctx.createLinearGradient(0, 0, 0, topFeatherHeight);
-    featherGrad.addColorStop(0, 'rgba(30, 16, 53, 1.0)');
-    featherGrad.addColorStop(1, 'rgba(30, 16, 53, 0.0)');
-    ctx.fillStyle = featherGrad;
-    ctx.fillRect(0, 0, gw, topFeatherHeight);
-
-    ctx.restore();
-
-    // RIPPED PAPER FIBER EDGES & 3D DEPTH SHADOWS
-    if (t > 0.001 && pathPoints.length > 1) {
-      const tearLine = new Path2D();
-      tearLine.moveTo(pathPoints[0].x, pathPoints[0].y);
-      for (let i = 1; i < pathPoints.length; i++) {
-        tearLine.lineTo(pathPoints[i].x, pathPoints[i].y);
+  // High-Performance 60 FPS FULL-SCREEN Canvas Paper Tear Renderer from Artifact
+  const renderCanvas = useCallback(
+    (timestamp: number) => {
+      const canvas = canvasRef.current;
+      const container = canvasContainerRef.current;
+      if (!canvas || !container) {
+        tearAnimationRef.current = requestAnimationFrame(renderCanvas);
+        return;
+      }
+      const ctx = canvas.getContext('2d');
+      if (!ctx) {
+        tearAnimationRef.current = requestAnimationFrame(renderCanvas);
+        return;
       }
 
-      // Heavy Cast Drop Shadow
+      const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const gw = Math.floor(w * dpr);
+      const gh = Math.floor(h * dpr);
+
+      if (canvas.width !== gw || canvas.height !== gh) {
+        canvas.width = gw;
+        canvas.height = gh;
+      }
+      if (canvas.style.width !== w + 'px' || canvas.style.height !== h + 'px') {
+        canvas.style.width = w + 'px';
+        canvas.style.height = h + 'px';
+      }
+
+      const rawT = tearProgress.get();
+      const t = cubicEase(Math.max(0, Math.min(1, rawT)));
+
+      pulseRef.current = timestamp * 0.0012;
+      const pulse = pulseRef.current;
+
+      ctx.clearRect(0, 0, gw, gh);
+
+      // BOTTOM REVEALED CANVAS LAYER (#08080C WITH VIBRANT PINK AURA)
+      ctx.fillStyle = '#08080c';
+      ctx.fillRect(0, 0, gw, gh);
+
+      // Radial Glowing Atmosphere Overlay from Artifact
+      const cx = gw * 0.7;
+      const cy = gh * 0.6;
+      const auraRadius = gw * 0.8;
+      const pulseMult = 1 + Math.sin(pulse) * 0.06;
+      const auraGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, auraRadius * pulseMult);
+      auraGrad.addColorStop(0, `rgba(255, 20, 147, ${0.9 + Math.sin(pulse * 1.1) * 0.06})`);
+      auraGrad.addColorStop(0.14, 'rgba(255, 20, 147, 0.42)');
+      auraGrad.addColorStop(0.32, 'rgba(255, 20, 147, 0.14)');
+      auraGrad.addColorStop(0.58, 'rgba(255, 20, 147, 0.03)');
+      auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = auraGrad;
+      ctx.fillRect(0, 0, gw, gh);
+
+      // Vignette Overlay
+      const vigGrad = ctx.createRadialGradient(gw * 0.5, gh * 0.5, gh * 0.25, gw * 0.5, gh * 0.5, gw * 0.9);
+      vigGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      vigGrad.addColorStop(1, 'rgba(0, 0, 0, 0.55)');
+      ctx.fillStyle = vigGrad;
+      ctx.fillRect(0, 0, gw, gh);
+
+      // TOP PAPER MASK REVEAL (DIAGONAL CUT MASK FROM ARTIFACT)
+      const pointsCount = noisePointsRef.current.length ? noisePointsRef.current.length - 1 : 30;
+      const topY = gh * 0.2;
+      const botY = gh * 0.8;
+      const cutX = t * gw;
+      const pathPoints: { x: number; y: number }[] = [];
+
+      for (let i = 0; i <= pointsCount; i++) {
+        const ratio = i / pointsCount;
+        const px = ratio * gw;
+        if (px > cutX + 0.5) break;
+        const py = topY + (botY - topY) * ratio;
+        const noiseVal = (noisePointsRef.current[i] ?? 0) * (8 * dpr);
+        pathPoints.push({ x: px, y: py + noiseVal });
+      }
+
+      if (pathPoints.length === 0) pathPoints.push({ x: 0, y: topY });
+
       ctx.save();
-      ctx.shadowColor = 'rgba(0, 0, 0, 0.95)';
-      ctx.shadowBlur = 32 * dpr;
-      ctx.shadowOffsetY = 18 * dpr;
-      ctx.shadowOffsetX = 8 * dpr;
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.95)';
-      ctx.lineWidth = 22 * dpr;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.stroke(tearLine);
+      const clipPath = new Path2D();
+      clipPath.moveTo(0, 0);
+      clipPath.lineTo(gw, 0);
+      clipPath.lineTo(gw, gh);
+
+      if (t < 0.999) {
+        clipPath.lineTo(cutX, gh);
+      } else {
+        clipPath.lineTo(gw, botY);
+      }
+
+      for (let i = pathPoints.length - 1; i >= 0; i--) {
+        clipPath.lineTo(pathPoints[i].x, pathPoints[i].y);
+      }
+      clipPath.lineTo(0, 0);
+      clipPath.closePath();
+      ctx.clip(clipPath);
+
+      // Top Paper Canvas Background Gradient (Matching Hero Atmosphere #1E1035 -> #1E1B4B -> #171233)
+      const topPaperGrad = ctx.createLinearGradient(0, 0, 0, gh);
+      topPaperGrad.addColorStop(0, '#1E1035');
+      topPaperGrad.addColorStop(0.5, '#1E1B4B');
+      topPaperGrad.addColorStop(1, '#171233');
+      ctx.fillStyle = topPaperGrad;
+      ctx.fillRect(0, 0, gw, gh);
+
+      // Central Royal Aura Overlay on Top Paper Layer
+      const topAuraGrad = ctx.createRadialGradient(gw * 0.5, gh * 0.5, 0, gw * 0.5, gh * 0.5, Math.max(gw, gh) * 0.65);
+      topAuraGrad.addColorStop(0, 'rgba(236, 72, 153, 0.7)');
+      topAuraGrad.addColorStop(0.25, 'rgba(139, 92, 246, 0.5)');
+      topAuraGrad.addColorStop(0.5, 'rgba(59, 130, 246, 0.35)');
+      topAuraGrad.addColorStop(0.82, 'rgba(30, 27, 75, 0.2)');
+      topAuraGrad.addColorStop(1, 'rgba(23, 18, 51, 0)');
+      ctx.fillStyle = topAuraGrad;
+      ctx.fillRect(0, 0, gw, gh);
+
+      // Film Grain Overlay on Top Paper Layer (from Artifact)
+      ctx.save();
+      ctx.globalAlpha = 0.03;
+      ctx.globalCompositeOperation = 'overlay';
+      const grainCount = Math.floor((gw * gh) / (32400 * dpr * dpr));
+      for (let i = 0; i < Math.min(grainCount, 180); i++) {
+        const gx = ((Math.sin(i * 12.9898) * 43758.5453) % 1) * gw;
+        const gy = ((Math.cos(i * 78.233) * 12345.6789) % 1) * gh;
+        const size = (0.6 + (i % 3) * 0.4) * dpr;
+        ctx.fillStyle = i % 2 ? '#ffffff' : '#000000';
+        ctx.fillRect(gx, gy, size, size);
+      }
       ctx.restore();
 
-      // Inner Shadow Edge
-      ctx.save();
-      ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
-      ctx.lineWidth = 12 * dpr;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.stroke(tearLine);
       ctx.restore();
 
-      // Cream Fibrous Paper Edge Highlight (#E8E0D5)
-      ctx.save();
-      ctx.strokeStyle = '#e8e0d5';
-      ctx.lineWidth = 3.6 * dpr;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.stroke(tearLine);
-      ctx.restore();
+      // RIPPED PAPER FIBER EDGES & 3D DEPTH SHADOWS (EXACT STYLING FROM ARTIFACT)
+      if (t > 0.001 && pathPoints.length > 1) {
+        const tearLine = new Path2D();
+        tearLine.moveTo(pathPoints[0].x, pathPoints[0].y);
+        for (let i = 1; i < pathPoints.length; i++) {
+          tearLine.lineTo(pathPoints[i].x, pathPoints[i].y);
+        }
 
-      // Crisp White Fiber Outline
-      ctx.save();
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
-      ctx.lineWidth = 1.4 * dpr;
-      ctx.stroke(tearLine);
-      ctx.restore();
-    }
+        // Heavy Cast Drop Shadow (from Artifact)
+        ctx.save();
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
+        ctx.shadowBlur = 26 * dpr;
+        ctx.shadowOffsetY = 14 * dpr;
+        ctx.shadowOffsetX = 5 * dpr;
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
+        ctx.lineWidth = 18 * dpr;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke(tearLine);
+        ctx.restore();
 
-    tearAnimationRef.current = requestAnimationFrame(renderCanvas);
-  }, [tearProgress]);
+        // Inner Shadow Edge
+        ctx.save();
+        ctx.strokeStyle = 'rgba(0, 0, 0, 0.55)';
+        ctx.lineWidth = 10 * dpr;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke(tearLine);
+        ctx.restore();
+
+        // Cream Fibrous Paper Edge Highlight (#E8E0D5 from Artifact)
+        ctx.save();
+        ctx.strokeStyle = '#e8e0d5';
+        ctx.lineWidth = 3 * dpr;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.stroke(tearLine);
+        ctx.restore();
+
+        // Crisp White Fiber Outline
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.lineWidth = 1.1 * dpr;
+        ctx.stroke(tearLine);
+        ctx.restore();
+
+        // Micro Fibers Extending Along Edge (from Artifact)
+        ctx.save();
+        ctx.strokeStyle = 'rgba(232, 224, 213, 0.65)';
+        ctx.lineWidth = 0.8 * dpr;
+        for (let i = 1; i < pathPoints.length - 1; i += 3) {
+          if (Math.random() > 0.6) continue;
+          const pt = pathPoints[i];
+          const angle =
+            Math.atan2(pathPoints[i + 1].y - pathPoints[i - 1].y, pathPoints[i + 1].x - pathPoints[i - 1].x) +
+            Math.PI / 2;
+          const len = (2 + Math.random() * 5) * dpr;
+          const dir = Math.random() > 0.5 ? 1 : -0.5;
+          ctx.beginPath();
+          ctx.moveTo(pt.x, pt.y);
+          ctx.lineTo(pt.x + Math.cos(angle) * len * dir, pt.y + Math.sin(angle) * len * dir);
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+
+      tearAnimationRef.current = requestAnimationFrame(renderCanvas);
+    },
+    [tearProgress]
+  );
 
   useEffect(() => {
     tearAnimationRef.current = requestAnimationFrame(renderCanvas);
@@ -585,7 +625,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (SOFT TOP FEATHER BLEND ELIMINATES HORIZONTAL SEAM) */}
+      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (NEW ARTIFACT INTEGRATION) */}
       {isStatementScreen && (
         <section
           ref={tearSectionRef}
