@@ -114,7 +114,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   // Cubic Easing Function for Natural Physical Paper Resistance
   const cubicEase = (v: number) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
 
-  // Exact 60 FPS Canvas Paper Tear Renderer from User's New Artifact
+  // Exact 60 FPS Canvas Paper Tear Renderer with 100% Seamless Background Blend
   const renderCanvas = useCallback(
     (timestamp: number) => {
       const canvas = canvasRef.current;
@@ -176,7 +176,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       ctx.fillStyle = vigGrad;
       ctx.fillRect(0, 0, gw, gh);
 
-      // 2. TOP PAPER MASK REVEAL (#0D0D2E UNIFORM TOP CANVAS FROM NEW ARTIFACT)
+      // 2. TOP PAPER MASK REVEAL (#0D0D2E UNIFORM TOP CANVAS WITH SOFT FEATHERING)
       const pointsCount = noisePointsRef.current.length ? noisePointsRef.current.length - 1 : 30;
       const topY = gh * 0.2;
       const botY = gh * 0.8;
@@ -213,7 +213,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       clipPath.closePath();
       ctx.clip(clipPath);
 
-      // Deep Navy Top Paper Canvas Fill (#0D0D2E from artifact)
+      // Unified Deep Navy Top Paper Canvas Fill (#0D0D2E)
       ctx.fillStyle = '#0d0d2e';
       ctx.fillRect(0, 0, gw, gh);
 
@@ -230,6 +230,14 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         ctx.fillRect(gx, gy, size, size);
       }
       ctx.restore();
+
+      // Top Edge Soft Feathering to eliminate any horizontal seam line
+      const topFeatherHeight = 160 * dpr;
+      const featherGrad = ctx.createLinearGradient(0, 0, 0, topFeatherHeight);
+      featherGrad.addColorStop(0, 'rgba(13, 13, 46, 1.0)');
+      featherGrad.addColorStop(1, 'rgba(13, 13, 46, 0.0)');
+      ctx.fillStyle = featherGrad;
+      ctx.fillRect(0, 0, gw, topFeatherHeight);
 
       ctx.restore();
 
@@ -350,7 +358,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   return (
     <div
       ref={containerRef}
-      className={`relative w-full ${isStatementScreen ? 'min-h-[420vh]' : 'h-[100dvh] overflow-hidden'} bg-[#08080c] select-none touch-pan-y`}
+      className={`relative w-full ${isStatementScreen ? 'min-h-[420vh]' : 'h-[100dvh] overflow-hidden'} bg-[#0d0d2e] select-none touch-pan-y`}
     >
       {/* EXPANDING CENTRAL CIRCULAR AURA DOT */}
       <motion.div
@@ -363,7 +371,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
           duration: 3.4,
           ease: [0.25, 0.1, 0.25, 1.0],
         }}
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] sm:w-[600px] sm:h-[600px] rounded-full pointer-events-none z-0 bg-[radial-gradient(circle_at_center,_#EC4899_0%,_#8B5CF6_25%,_#3B82F6_50%,_#1E1B4B_82%,_#171233_100%)] shadow-[0_0_120px_rgba(236,72,153,0.8)] transform-gpu will-change-transform"
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] sm:w-[600px] sm:h-[600px] rounded-full pointer-events-none z-0 bg-[radial-gradient(circle_at_center,_#EC4899_0%,_#8B5CF6_25%,_#3B82F6_50%,_#1E1B4B_82%,_#0d0d2e_100%)] shadow-[0_0_120px_rgba(236,72,153,0.8)] transform-gpu will-change-transform"
       />
 
       {/* Dynamic Ambient Atmosphere Depth Layer */}
@@ -371,7 +379,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: isStatementScreen ? 1 : 0 }}
         transition={{ duration: 3.4, ease: 'easeInOut' }}
-        className="fixed inset-0 w-full h-full pointer-events-none z-0 bg-gradient-to-b from-[#1E1035] via-[#1E1B4B] to-[#171233] transform-gpu"
+        className="fixed inset-0 w-full h-full pointer-events-none z-0 bg-gradient-to-b from-[#1E1035] via-[#1E1B4B] to-[#0d0d2e] transform-gpu"
       />
 
       {/* QUESTION SENTENCES (PHASE 1 - CLICK/TAP TO REVEAL) */}
@@ -494,11 +502,11 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 3: HERO POLAROID PORTRAIT DIAGONAL ENTRANCE SECTION (RESTS 100% FULL IN VIEWPORT FIRST) */}
+      {/* PHASE 3: HERO POLAROID PORTRAIT DIAGONAL ENTRANCE SECTION (RESTS 100% FULL IN VIEWPORT FIRST & BLENDS SEAMLESSLY INTO #0D0D2E) */}
       {isStatementScreen && (
         <section
           ref={portraitSectionRef}
-          className="relative z-20 w-full min-h-[140vh] px-6 sm:px-14 md:px-24 py-20 flex items-center justify-center overflow-hidden"
+          className="relative z-20 w-full min-h-[140vh] px-6 sm:px-14 md:px-24 py-20 flex items-center justify-center overflow-hidden bg-gradient-to-b from-transparent via-[#1E1B4B]/40 to-[#0d0d2e]"
         >
           <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-12 lg:gap-16 items-center relative z-10 sticky top-[15vh]">
             {/* Left Column: Heading & Branding */}
@@ -610,7 +618,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (EXACT IMPLEMENTATION FROM USER'S NEW ARTIFACT) */}
+      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (100% UNIFIED COLOR MATCH WITH ZERO SEAM LINE) */}
       {isStatementScreen && (
         <section
           ref={tearSectionRef}
