@@ -85,30 +85,30 @@ export const ScrollPaperTearOverlay: React.FC = () => {
     };
   }, [isStatementScreen]);
 
-  // Track scroll progress for Phase 3 (Hero Portrait arrives and completes FULLY first)
+  // Track scroll progress for Phase 3 (Hero Portrait Section: Arrives and rests fully in view)
   const { scrollYProgress: portraitScrollProgress } = useScroll({
     target: portraitSectionRef,
     offset: ['start end', 'end start'],
   });
 
-  // Hero portrait glides in early and is 100% fully shown by 0.40
-  const portraitX = useTransform(portraitScrollProgress, [0.08, 0.40], ['-45vw', '0vw']);
-  const portraitY = useTransform(portraitScrollProgress, [0.08, 0.40], ['40vh', '0vh']);
-  const portraitRotate = useTransform(portraitScrollProgress, [0.08, 0.40], [-16, 4]);
-  const portraitScale = useTransform(portraitScrollProgress, [0.08, 0.40], [0.72, 1.0]);
-  const portraitOpacity = useTransform(portraitScrollProgress, [0.05, 0.25], [0, 1]);
+  // Hero portrait glides in early and settles 100% in full view
+  const portraitX = useTransform(portraitScrollProgress, [0.08, 0.35], ['-45vw', '0vw']);
+  const portraitY = useTransform(portraitScrollProgress, [0.08, 0.35], ['40vh', '0vh']);
+  const portraitRotate = useTransform(portraitScrollProgress, [0.08, 0.35], [-16, 4]);
+  const portraitScale = useTransform(portraitScrollProgress, [0.08, 0.35], [0.72, 1.0]);
+  const portraitOpacity = useTransform(portraitScrollProgress, [0.05, 0.22], [0, 1]);
 
-  const textContentOpacity = useTransform(portraitScrollProgress, [0.15, 0.40], [0, 1]);
-  const textContentY = useTransform(portraitScrollProgress, [0.15, 0.40], [40, 0]);
+  const textContentOpacity = useTransform(portraitScrollProgress, [0.12, 0.35], [0, 1]);
+  const textContentY = useTransform(portraitScrollProgress, [0.12, 0.35], [40, 0]);
 
-  // Track scroll progress for Phase 4 (Paper Tear Section: ONLY starts AFTER hero portrait is fully shown)
+  // Track scroll progress for Phase 4 (Paper Tear Section: ONLY starts when user scrolls DOWN PAST the hero portrait)
   const { scrollYProgress: tearScrollProgress } = useScroll({
     target: tearSectionRef,
-    offset: ['start center', 'end start'],
+    offset: ['start start', 'end start'],
   });
 
-  // Paper tear animation begins AFTER portrait is fully visible on screen
-  const tearProgress = useTransform(tearScrollProgress, [0.20, 0.80], [0, 1]);
+  // Paper tear starts tearing LATE — strictly after user scrolls past the full hero portrait screen
+  const tearProgress = useTransform(tearScrollProgress, [0.05, 0.75], [0, 1]);
 
   // Cubic Easing Function for Natural Physical Paper Resistance
   const cubicEase = (v: number) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
@@ -304,7 +304,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   return (
     <div
       ref={containerRef}
-      className={`relative w-full ${isStatementScreen ? 'min-h-[400vh]' : 'h-[100dvh] overflow-hidden'} bg-[#08080c] select-none touch-pan-y`}
+      className={`relative w-full ${isStatementScreen ? 'min-h-[420vh]' : 'h-[100dvh] overflow-hidden'} bg-[#08080c] select-none touch-pan-y`}
     >
       {/* EXPANDING CENTRAL CIRCULAR AURA DOT */}
       <motion.div
@@ -448,11 +448,11 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 3: HERO POLAROID PORTRAIT DIAGONAL ENTRANCE SECTION (COMPLETES 100% FIRST) */}
+      {/* PHASE 3: HERO POLAROID PORTRAIT DIAGONAL ENTRANCE SECTION (RESTS 100% FULL IN VIEWPORT FIRST) */}
       {isStatementScreen && (
         <section
           ref={portraitSectionRef}
-          className="relative z-20 w-full min-h-[150vh] px-6 sm:px-14 md:px-24 py-20 flex items-center justify-center overflow-hidden"
+          className="relative z-20 w-full min-h-[140vh] px-6 sm:px-14 md:px-24 py-20 flex items-center justify-center overflow-hidden"
         >
           <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-12 lg:gap-16 items-center relative z-10 sticky top-[15vh]">
             {/* Left Column: Heading & Branding */}
@@ -564,7 +564,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (STARTS ONLY AFTER HERO PORTRAIT IS FULLY SHOWN) */}
+      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (STARTS LATER ONLY WHEN USER SCROLLS DOWN PAST HERO PORTRAIT) */}
       {isStatementScreen && (
         <section
           ref={tearSectionRef}
