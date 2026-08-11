@@ -427,12 +427,12 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       ref={containerRef}
       className={`relative w-full ${isStatementScreen ? (isMobile ? 'min-h-[350vh]' : 'min-h-[400vh]') : 'h-[100dvh] overflow-hidden'} bg-[#0a080c] select-none touch-pan-y`}
     >
-      {/* EXPANDING CENTRAL CIRCULAR AURA DOT */}
+      {/* EXPANDING CENTRAL CIRCULAR AURA DOT (CAPPED & SOFTENED ON PHONE TO PREVENT SOLID PINK COVER SCREEN) */}
       <motion.div
         initial={{ scale: 0, opacity: 0 }}
         animate={{
-          scale: isStatementScreen ? 6.5 : 0,
-          opacity: isStatementScreen ? 1 : 0,
+          scale: isStatementScreen ? (isMobile ? 2.2 : 6.5) : 0,
+          opacity: isStatementScreen ? (isMobile ? 0.35 : 1) : 0,
         }}
         transition={{
           duration: 3.4,
