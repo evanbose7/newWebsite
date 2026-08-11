@@ -103,25 +103,25 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       onClick={handleTap}
       className="relative w-full h-[100dvh] h-screen bg-black overflow-hidden flex items-center justify-center cursor-pointer select-none touch-pan-y"
     >
-      {/* SEAMLESS SLOW & SMOOTH CINEMATIC ROYAL AURA EXPANSION (1.8s DURATION) */}
+      {/* SLOW, SILKY & SMOOTH CINEMATIC ROYAL AURA EXPANSION (2.4s MOBILE-OPTIMIZED DURATION) */}
       <motion.div
         initial={{ scale: 0, opacity: 0 }}
         animate={{
-          scale: isFinalScreen ? 5.8 : 0,
+          scale: isFinalScreen ? 4.8 : 0,
           opacity: isFinalScreen ? 1 : 0,
         }}
         transition={{
-          duration: 1.8,
-          ease: [0.22, 1, 0.36, 1],
+          duration: 2.4,
+          ease: [0.25, 0.1, 0.25, 1.0],
         }}
-        className="absolute w-[500px] h-[500px] sm:w-[600px] sm:h-[600px] rounded-full pointer-events-none z-0 bg-[radial-gradient(circle,_#EC4899_0%,_#8B5CF6_25%,_#3B82F6_50%,_#1E1B4B_75%,_#0B0F19_100%)] transform-gpu will-change-transform"
+        className="absolute w-[450px] h-[450px] sm:w-[600px] sm:h-[600px] rounded-full pointer-events-none z-0 bg-[radial-gradient(circle,_#EC4899_0%,_#8B5CF6_25%,_#3B82F6_50%,_#1E1B4B_75%,_#0B0F19_100%)] transform-gpu will-change-transform"
       />
 
       {/* Dynamic Ambient Atmosphere Fill */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: isFinalScreen ? 1 : 0 }}
-        transition={{ duration: 1.8, ease: 'easeInOut' }}
+        transition={{ duration: 2.4, ease: 'easeInOut' }}
         className="absolute inset-0 w-full h-full pointer-events-none z-0 bg-gradient-to-b from-[#0F172A]/60 via-[#1E1B4B]/80 to-[#0B0F19] transform-gpu"
       />
 
@@ -131,7 +131,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
           key="question-screen"
           initial={{ opacity: 1 }}
           exit={{ opacity: 0, scale: 1.04 }}
-          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           className="relative z-20 w-full max-w-5xl mx-auto text-center flex items-center justify-center p-5 sm:p-6"
         >
           <h1 className="text-3xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-center leading-tight flex flex-wrap items-center justify-center gap-x-3 sm:gap-x-5 gap-y-2 select-none font-editorial">
@@ -181,7 +181,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, scale: 0.95, y: 25 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 1.4, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 1.6, delay: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="absolute inset-0 z-20 flex items-center justify-center p-5 sm:p-12 pointer-events-none transform-gpu"
         >
           {/* CONTINUOUS SILKY FLOATING CONTAINER (60 FPS) */}
