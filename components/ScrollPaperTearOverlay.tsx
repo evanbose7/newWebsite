@@ -108,13 +108,13 @@ export const ScrollPaperTearOverlay: React.FC = () => {
     offset: ['start start', 'end end'],
   });
 
-  // PRECISE CALIBRATION: Paper tear reaches 100% completion at scrollbar position ~0.58 (matching uploaded screenshot)
+  // PRECISE CALIBRATION: Paper tear reaches completion at scrollbar position ~0.58
   const tearProgress = useTransform(tearScrollProgress, [0.04, 0.58], [0, 1]);
 
   // Cubic Easing Function for Natural Physical Paper Resistance
   const cubicEase = (v: number) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
 
-  // Exact 60 FPS Canvas Paper Tear Renderer with 100% Seamless Background Blend
+  // Exact 60 FPS Canvas Paper Tear Renderer with PERMANENT JAGGED WHITE PAPER LINE
   const renderCanvas = useCallback(
     (timestamp: number) => {
       const canvas = canvasRef.current;
@@ -176,16 +176,17 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       ctx.fillStyle = vigGrad;
       ctx.fillRect(0, 0, gw, gh);
 
-      // 2. TOP PAPER MASK REVEAL (#0D0D2E UNIFORM TOP CANVAS WITH SOFT FEATHERING)
+      // 2. TOP PAPER MASK REVEAL (#0D0D2E UNIFORM TOP CANVAS WITH PERMANENT RESTING POSITION)
       const pointsCount = noisePointsRef.current.length ? noisePointsRef.current.length - 1 : 30;
       const topY = gh * 0.2;
       const botY = gh * 0.8;
-      const cutX = t * (gw * 1.6); // Fully sweeps 100% past screen bounds when t = 1
+      // Cut line sweeps from 0 to gw * 0.92 so the jagged white paper tear line remains permanently resting on screen!
+      const cutX = t * (gw * 0.92);
       const pathPoints: { x: number; y: number }[] = [];
 
       for (let i = 0; i <= pointsCount; i++) {
         const ratio = i / pointsCount;
-        const px = ratio * (gw * 1.2);
+        const px = ratio * gw;
         if (px > cutX + 0.5) break;
         const py = topY + (botY - topY) * ratio;
         const noiseVal = (noisePointsRef.current[i] ?? 0) * (8 * dpr);
@@ -199,12 +200,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       clipPath.moveTo(0, 0);
       clipPath.lineTo(gw, 0);
       clipPath.lineTo(gw, gh);
-
-      if (t < 0.999) {
-        clipPath.lineTo(cutX, gh);
-      } else {
-        clipPath.lineTo(gw, botY);
-      }
+      clipPath.lineTo(cutX, gh);
 
       for (let i = pathPoints.length - 1; i >= 0; i--) {
         clipPath.lineTo(pathPoints[i].x, pathPoints[i].y);
@@ -241,15 +237,15 @@ export const ScrollPaperTearOverlay: React.FC = () => {
 
       ctx.restore();
 
-      // 3. RIPPED PAPER FIBER EDGES & 3D DEPTH SHADOWS (EXACT STYLING FROM NEW ARTIFACT)
-      if (t > 0.001 && t < 0.999 && pathPoints.length > 1) {
+      // 3. RIPPED PAPER FIBER EDGES & 3D DEPTH SHADOWS (REMAINS 100% PERMANENTLY VISIBLE AFTER SCROLLING)
+      if (t > 0.001 && pathPoints.length > 1) {
         const tearLine = new Path2D();
         tearLine.moveTo(pathPoints[0].x, pathPoints[0].y);
         for (let i = 1; i < pathPoints.length; i++) {
           tearLine.lineTo(pathPoints[i].x, pathPoints[i].y);
         }
 
-        // Heavy Cast Drop Shadow (from new artifact)
+        // Heavy Cast Drop Shadow
         ctx.save();
         ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
         ctx.shadowBlur = 26 * dpr;
@@ -271,33 +267,35 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         ctx.stroke(tearLine);
         ctx.restore();
 
-        // Cream Fibrous Paper Edge Highlight (#E8E0D5 from new artifact)
+        // Cream Fibrous Paper Edge Highlight (#E8E0D5)
         ctx.save();
         ctx.strokeStyle = '#e8e0d5';
-        ctx.lineWidth = 3 * dpr;
+        ctx.lineWidth = 3.2 * dpr;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.stroke(tearLine);
         ctx.restore();
 
-        // Crisp White Fiber Outline
+        // Crisp Solid White Fiber Outline (PERMANENT JAGGED LINE)
         ctx.save();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-        ctx.lineWidth = 1.1 * dpr;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.4 * dpr;
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+        ctx.shadowBlur = 4 * dpr;
         ctx.stroke(tearLine);
         ctx.restore();
 
-        // Micro Fibers Extending Along Edge (from new artifact)
+        // Micro Fibers Extending Along Edge
         ctx.save();
-        ctx.strokeStyle = 'rgba(232, 224, 213, 0.65)';
-        ctx.lineWidth = 0.8 * dpr;
+        ctx.strokeStyle = 'rgba(232, 224, 213, 0.75)';
+        ctx.lineWidth = 0.9 * dpr;
         for (let i = 1; i < pathPoints.length - 1; i += 3) {
           if (Math.random() > 0.6) continue;
           const pt = pathPoints[i];
           const angle =
             Math.atan2(pathPoints[i + 1].y - pathPoints[i - 1].y, pathPoints[i + 1].x - pathPoints[i - 1].x) +
             Math.PI / 2;
-          const len = (2 + Math.random() * 5) * dpr;
+          const len = (2.5 + Math.random() * 5) * dpr;
           const dir = Math.random() > 0.5 ? 1 : -0.5;
           ctx.beginPath();
           ctx.moveTo(pt.x, pt.y);
@@ -618,7 +616,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (100% FULLY COMPLETED AT THE EXACT SCROLLBAR POSITION SHOWN IN RED) */}
+      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (JAGGED WHITE PAPER LINE REMAINS PERMANENTLY VISIBLE) */}
       {isStatementScreen && (
         <section
           ref={tearSectionRef}
