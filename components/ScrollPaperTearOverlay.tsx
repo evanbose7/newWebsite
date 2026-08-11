@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import Lenis from 'lenis';
 
 interface WordItem {
   text: string;
@@ -48,13 +49,36 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   const isLastSentence = sentenceIdx === SEQUENCE_WORDS.length - 1;
   const isSentenceComplete = visibleCount >= currentWords.length;
 
+  // Initialize Lenis 60 FPS Inertia Smooth Scroll
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      wheelMultiplier: 1.0,
+      touchMultiplier: 1.5,
+    });
+
+    let rafId: number;
+    function raf(time: number) {
+      lenis.raf(time);
+      rafId = requestAnimationFrame(raf);
+    }
+    rafId = requestAnimationFrame(raf);
+
+    return () => {
+      cancelAnimationFrame(rafId);
+      lenis.destroy();
+    };
+  }, []);
+
   // Track native scroll progress relative to container
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ['start start', 'end start'],
   });
 
-  // VIBRANT ROYAL BLUE-PURPLE RADIAL AURA EXPANSION
+  // VIBRANT ROYAL BLUE-PURPLE RADIAL AURA EXPANSION (HARDWARE ACCELERATED)
   const auraScale = useTransform(scrollYProgress, [0, 0.45], [0, 6.0]);
   const auraOpacity = useTransform(scrollYProgress, [0, 0.05, 0.45, 1], [0, 1, 1, 1]);
 
@@ -66,7 +90,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   // Scroll indicator arrow opacity
   const arrowOpacity = useTransform(scrollYProgress, [0, 0.08], [1, 0]);
 
-  // Statement text motion (Reaches 100% solid 1.0 opacity quickly so it is 100% bright when scrolled)
+  // Statement text scroll fade motion
   const statementScale = useTransform(scrollYProgress, [0.22, 0.48], [0.96, 1]);
   const statementOpacity = useTransform(scrollYProgress, [0.20, 0.45], [0, 1]);
   const statementY = useTransform(scrollYProgress, [0.22, 0.48], [30, 0]);
@@ -121,23 +145,23 @@ export const ScrollPaperTearOverlay: React.FC = () => {
             scale: auraScale,
             opacity: auraOpacity,
           }}
-          className="absolute w-[600px] h-[600px] rounded-full pointer-events-none z-0 bg-[radial-gradient(circle,_#EC4899_0%,_#8B5CF6_25%,_#3B82F6_50%,_#1E1B4B_75%,_#0F172A_92%,_#000000_100%)] blur-2xl shadow-[0_0_200px_rgba(236,72,153,0.9)]"
+          className="absolute w-[600px] h-[600px] rounded-full pointer-events-none z-0 bg-[radial-gradient(circle,_#EC4899_0%,_#8B5CF6_25%,_#3B82F6_50%,_#1E1B4B_75%,_#0F172A_92%,_#000000_100%)] blur-2xl shadow-[0_0_200px_rgba(236,72,153,0.9)] transform-gpu will-change-transform"
         />
 
         {/* Dynamic Glowing Ambient Atmosphere Fill */}
         <motion.div
           style={{ opacity: auraOpacity }}
-          className="absolute inset-0 w-full h-full pointer-events-none z-0 bg-gradient-to-b from-[#0F172A]/50 via-[#1E1B4B]/80 to-[#0B0F19]"
+          className="absolute inset-0 w-full h-full pointer-events-none z-0 bg-gradient-to-b from-[#0F172A]/50 via-[#1E1B4B]/80 to-[#0B0F19] transform-gpu"
         />
 
         {/* Ambient Neon Floating Glow Orbs */}
         <motion.div
           style={{ opacity: auraOpacity }}
-          className="absolute top-1/3 left-1/4 w-[450px] h-[450px] rounded-full bg-[#EC4899]/30 blur-[130px] pointer-events-none z-0 animate-pulse"
+          className="absolute top-1/3 left-1/4 w-[450px] h-[450px] rounded-full bg-[#EC4899]/30 blur-[130px] pointer-events-none z-0 animate-pulse transform-gpu"
         />
         <motion.div
           style={{ opacity: auraOpacity }}
-          className="absolute bottom-1/3 right-1/4 w-[450px] h-[450px] rounded-full bg-[#00F2FE]/30 blur-[130px] pointer-events-none z-0"
+          className="absolute bottom-1/3 right-1/4 w-[450px] h-[450px] rounded-full bg-[#00F2FE]/30 blur-[130px] pointer-events-none z-0 transform-gpu"
         />
 
         {/* STAGE 1: CENTERED KINETIC TYPOGRAPHY REVEAL HERO TEXT */}
@@ -149,7 +173,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
             y: heroTextY,
             pointerEvents: isLastSentence && isSentenceComplete ? 'none' : 'auto',
           }}
-          className="relative z-20 w-full max-w-5xl mx-auto text-center flex items-center justify-center p-6 cursor-pointer select-none"
+          className="relative z-20 w-full max-w-5xl mx-auto text-center flex items-center justify-center p-6 cursor-pointer select-none transform-gpu"
         >
           <h1 className="text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-center leading-tight flex flex-wrap items-center justify-center gap-x-3.5 sm:gap-x-5 gap-y-2 select-none font-editorial">
             {currentWords.slice(0, visibleCount).map((wordObj, i) => {
@@ -199,7 +223,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
           </motion.div>
         )}
 
-        {/* STAGE 2: 100% BRIGHT SOLID HIGH-CONTRAST TARGET STATEMENT */}
+        {/* STAGE 2: 100% BRIGHT SOLID TARGET STATEMENT WITH SMOOTH FLOATING ANIMATION */}
         {isLastSentence && isSentenceComplete && (
           <motion.div
             style={{
@@ -207,9 +231,20 @@ export const ScrollPaperTearOverlay: React.FC = () => {
               scale: statementScale,
               y: statementY,
             }}
-            className="absolute inset-0 z-20 flex items-center justify-center p-6 sm:p-12 pointer-events-none"
+            className="absolute inset-0 z-20 flex items-center justify-center p-6 sm:p-12 pointer-events-none transform-gpu"
           >
-            <div className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center justify-center gap-6 sm:gap-8">
+            {/* GENTLE CONTINUOUS FLOATING CONTAINER (60 FPS) */}
+            <motion.div
+              animate={{
+                y: [-8, 8, -8],
+              }}
+              transition={{
+                duration: 5,
+                repeat: Infinity,
+                ease: 'easeInOut',
+              }}
+              className="relative z-10 max-w-5xl mx-auto text-center flex flex-col items-center justify-center gap-6 sm:gap-8 transform-gpu"
+            >
               {/* Luminous Neon Pill Badge */}
               <div className="inline-flex items-center gap-2.5 px-6 py-2.5 rounded-full bg-[#EC4899]/30 border-2 border-[#EC4899] shadow-[0_0_30px_rgba(236,72,153,0.9)] backdrop-blur-xl">
                 <span className="w-2.5 h-2.5 rounded-full bg-[#FFD600] animate-ping" />
@@ -232,7 +267,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
 
               {/* Luminous Laser Accent Bar */}
               <div className="w-36 h-2 bg-gradient-to-r from-[#FF2E93] via-[#FFD600] to-[#00F5FF] rounded-full shadow-[0_0_30px_rgba(0,245,255,1)] mt-2 animate-pulse" />
-            </div>
+            </motion.div>
           </motion.div>
         )}
       </div>
