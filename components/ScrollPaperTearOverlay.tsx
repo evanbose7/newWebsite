@@ -47,14 +47,25 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   const [visibleCount, setVisibleCount] = useState(1);
   const [isRevealing, setIsRevealing] = useState(false);
   const [isStatementScreen, setIsStatementScreen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const revealTimerRef = useRef<NodeJS.Timeout | null>(null);
   const tearAnimationRef = useRef<number>(0);
   const noisePointsRef = useRef<number[]>([]);
+  const phonePointsRef = useRef<number[]>([]);
   const pulseRef = useRef<number>(0);
 
-  // Seed procedural jagged points for authentic fibrous paper tear matching artifact
+  // Check mobile screen width
   useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Seed desktop points (30 points) & phone points (108 points from new phone artifact)
+  useEffect(() => {
+    // Desktop points
     const points: number[] = [];
     let seed = 98765;
     const rnd = () => {
@@ -67,6 +78,22 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       points.push(a * 0.65 + wave * 0.35);
     }
     noisePointsRef.current = points;
+
+    // Phone points (108 points from phone artifact)
+    const pPoints: number[] = [];
+    let pSeed = 98765;
+    const pRnd = () => {
+      pSeed = (pSeed * 1664525 + 1013904223) % 4294967296;
+      return pSeed / 4294967296;
+    };
+    for (let i = 0; i <= 108; i++) {
+      const base = pRnd() * 2 - 1;
+      const wave1 = Math.sin(i * 0.27) * 0.6 + Math.cos(i * 0.19) * 0.4;
+      const wave2 = Math.sin(i * 1.9) * 0.55 + Math.sin(i * 2.7) * 0.35;
+      const noise = (pRnd() - 0.5) * 0.9 + Math.sin(i * 7.3) * 0.22 + Math.sin(i * 13.1) * 0.12;
+      pPoints.push(base * 0.35 + wave1 * 0.22 + wave2 * 0.35 + noise * 0.32);
+    }
+    phonePointsRef.current = pPoints;
   }, []);
 
   const currentWords = sentenceIdx < SEQUENCE_WORDS.length ? SEQUENCE_WORDS[sentenceIdx] : [];
@@ -87,35 +114,55 @@ export const ScrollPaperTearOverlay: React.FC = () => {
     };
   }, [isStatementScreen]);
 
-  // Track scroll progress for Phase 3 (Hero Portrait Section: Arrives and rests fully in view)
+  // Track scroll progress for Phase 3 (Hero Portrait Section)
   const { scrollYProgress: portraitScrollProgress } = useScroll({
     target: portraitSectionRef,
     offset: ['start end', 'end start'],
   });
 
-  // Hero portrait glides in early and settles 100% in full view
-  const portraitX = useTransform(portraitScrollProgress, [0.08, 0.35], ['-45vw', '0vw']);
-  const portraitY = useTransform(portraitScrollProgress, [0.08, 0.35], ['40vh', '0vh']);
-  const portraitRotate = useTransform(portraitScrollProgress, [0.08, 0.35], [-16, 4]);
-  const portraitScale = useTransform(portraitScrollProgress, [0.08, 0.35], [0.72, 1.0]);
-  const portraitOpacity = useTransform(portraitScrollProgress, [0.05, 0.22], [0, 1]);
+  // RESPONSIVE HERO PORTRAIT ANIMATION: On phone, starts centered & fits 100% in viewport without being cut off
+  const portraitX = useTransform(
+    portraitScrollProgress,
+    [0.08, 0.35],
+    [isMobile ? '0vw' : '-45vw', '0vw']
+  );
+  const portraitY = useTransform(
+    portraitScrollProgress,
+    [0.08, 0.35],
+    [isMobile ? '15vh' : '40vh', '0vh']
+  );
+  const portraitRotate = useTransform(
+    portraitScrollProgress,
+    [0.08, 0.35],
+    [isMobile ? -4 : -16, 4]
+  );
+  const portraitScale = useTransform(
+    portraitScrollProgress,
+    [0.08, 0.35],
+    [isMobile ? 0.88 : 0.72, 1.0]
+  );
+  const portraitOpacity = useTransform(portraitScrollProgress, [0.05, 0.2], [0, 1]);
 
-  const textContentOpacity = useTransform(portraitScrollProgress, [0.12, 0.35], [0, 1]);
-  const textContentY = useTransform(portraitScrollProgress, [0.12, 0.35], [40, 0]);
+  const textContentOpacity = useTransform(portraitScrollProgress, [0.1, 0.3], [0, 1]);
+  const textContentY = useTransform(portraitScrollProgress, [0.1, 0.3], [30, 0]);
 
-  // Track scroll progress for Phase 4 (Paper Tear Section): Begins IMMEDIATELY when scrollbar reaches it
+  // Track scroll progress for Phase 4 (Paper Tear Section): Finishes smoothly on scroll
   const { scrollYProgress: tearScrollProgress } = useScroll({
     target: tearSectionRef,
-    offset: ['start 90%', 'end 20%'],
+    offset: isMobile ? ['start 95%', 'end 90%'] : ['start 90%', 'end 20%'],
   });
 
-  // RESPONSIVE SCROLL TEAR PROGRESS: Tears open smoothly from 0 to 1 as you scroll
-  const tearProgress = useTransform(tearScrollProgress, [0.0, 0.85], [0, 1]);
+  // RESPONSIVE SCROLL TEAR PROGRESS: On mobile, completes faster so tear reaches the end naturally
+  const tearProgress = useTransform(
+    tearScrollProgress,
+    isMobile ? [0.0, 0.6] : [0.0, 0.85],
+    [0, 1]
+  );
 
-  // Cubic Easing Function for Natural Physical Paper Resistance (matching artifact)
+  // Cubic Easing Function for Natural Physical Paper Resistance
   const cubicEase = (v: number) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
 
-  // 60 FPS Canvas Paper Tear Renderer MATCHING NEW ARTIFACT EXACTLY
+  // 60 FPS Canvas Paper Tear Renderer (DESKTOP + PHONE ARTIFACT INTEGRATED)
   const renderCanvas = useCallback(
     (timestamp: number) => {
       const canvas = canvasRef.current;
@@ -129,7 +176,8 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         return;
       }
 
-      const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
+      const mobile = window.innerWidth < 768;
+      const dpr = Math.max(1, Math.min(mobile ? 2.5 : 2, window.devicePixelRatio || 1));
       const w = window.innerWidth;
       const h = window.innerHeight;
       const gw = Math.floor(w * dpr);
@@ -147,7 +195,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       const rawT = tearProgress.get();
       const t = cubicEase(Math.max(0, Math.min(1, rawT)));
 
-      pulseRef.current = timestamp * 0.0012;
+      pulseRef.current = timestamp * (mobile ? 0.0011 : 0.0012);
       const pulse = pulseRef.current;
 
       ctx.clearRect(0, 0, gw, gh);
@@ -156,42 +204,57 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       ctx.fillStyle = '#0a080c';
       ctx.fillRect(0, 0, gw, gh);
 
-      // Multi-Stage Base Radial Gradient (exact from artifact)
-      const baseGrad = ctx.createRadialGradient(gw * 0.52, gh * 0.58, 0, gw * 0.52, gh * 0.58, gw * 0.9);
-      baseGrad.addColorStop(0, '#0f0a0f');
-      baseGrad.addColorStop(0.32, '#0d090d');
-      baseGrad.addColorStop(0.58, '#09080b');
-      baseGrad.addColorStop(0.85, '#06050a');
+      // Multi-Stage Base Radial Gradient
+      const baseGrad = ctx.createRadialGradient(
+        gw * (mobile ? 0.5 : 0.52),
+        gh * (mobile ? 0.62 : 0.58),
+        0,
+        gw * (mobile ? 0.5 : 0.52),
+        gh * (mobile ? 0.62 : 0.58),
+        gw * (mobile ? 1.1 : 0.9)
+      );
+      baseGrad.addColorStop(0, mobile ? '#120c14' : '#0f0a0f');
+      baseGrad.addColorStop(0.3, mobile ? '#0e0a10' : '#0d090d');
+      baseGrad.addColorStop(0.58, mobile ? '#0a080c' : '#09080b');
+      baseGrad.addColorStop(0.85, mobile ? '#07050a' : '#06050a');
       baseGrad.addColorStop(1, '#050508');
       ctx.fillStyle = baseGrad;
       ctx.fillRect(0, 0, gw, gh);
 
-      // Pulsing Plum/Dark Violet Radial Glow (exact from artifact)
-      const cx = gw * 0.54;
-      const cy = gh * 0.68;
-      const auraRadius = gw * 0.58;
-      const pulseMult = 1 + Math.sin(pulse * 0.7) * 0.018;
+      // Pulsing Plum/Dark Violet Radial Glow
+      const cx = gw * (mobile ? 0.5 : 0.54);
+      const cy = gh * (mobile ? 0.72 : 0.68);
+      const auraRadius = gw * (mobile ? 0.95 : 0.58);
+      const pulseMult = 1 + Math.sin(pulse * (mobile ? 0.65 : 0.7)) * (mobile ? 0.022 : 0.018);
       const auraGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, auraRadius * pulseMult);
-      auraGrad.addColorStop(0, 'rgba(28, 16, 32, 0.15)');
-      auraGrad.addColorStop(0.22, 'rgba(28, 16, 32, 0.085)');
-      auraGrad.addColorStop(0.42, 'rgba(24, 14, 28, 0.035)');
-      auraGrad.addColorStop(0.68, 'rgba(18, 10, 18, 0.012)');
+      auraGrad.addColorStop(0, 'rgba(36, 20, 44, 0.18)');
+      auraGrad.addColorStop(0.24, 'rgba(28, 16, 32, 0.095)');
+      auraGrad.addColorStop(0.46, 'rgba(24, 14, 28, 0.04)');
+      auraGrad.addColorStop(0.72, 'rgba(18, 10, 18, 0.015)');
       auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = auraGrad;
       ctx.fillRect(0, 0, gw, gh);
 
-      // Fullscreen Radial Vignette Depth (exact from artifact)
-      const vigGrad = ctx.createRadialGradient(gw * 0.5, gh * 0.5, gh * 0.38, gw * 0.5, gh * 0.5, gw * 0.98);
+      // Fullscreen Radial Vignette Depth
+      const vigGrad = ctx.createRadialGradient(
+        gw * 0.5,
+        gh * 0.5,
+        gh * (mobile ? 0.35 : 0.38),
+        gw * 0.5,
+        gh * 0.5,
+        gw * (mobile ? 1.05 : 0.98)
+      );
       vigGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      vigGrad.addColorStop(0.72, 'rgba(0, 0, 0, 0.14)');
-      vigGrad.addColorStop(1, 'rgba(0, 0, 0, 0.38)');
+      vigGrad.addColorStop(0.68, 'rgba(0, 0, 0, 0.12)');
+      vigGrad.addColorStop(1, 'rgba(0, 0, 0, 0.42)');
       ctx.fillStyle = vigGrad;
       ctx.fillRect(0, 0, gw, gh);
 
       // 2. TOP PAPER MASK REVEAL (#0D0D2E UNIFORM TOP CANVAS FROM ARTIFACT)
-      const pointsCount = noisePointsRef.current.length ? noisePointsRef.current.length - 1 : 30;
-      const topY = gh * 0.2;
-      const botY = gh * 0.8;
+      const pointsSource = mobile && phonePointsRef.current.length ? phonePointsRef.current : noisePointsRef.current;
+      const pointsCount = pointsSource.length ? pointsSource.length - 1 : 30;
+      const topY = gh * (mobile ? 0.35 : 0.2);
+      const botY = gh * (mobile ? 0.55 : 0.8);
       const cutX = t * gw;
       const pathPoints: { x: number; y: number }[] = [];
 
@@ -200,7 +263,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         const px = ratio * gw;
         if (px > cutX + 0.5) break;
         const py = topY + (botY - topY) * ratio;
-        const noiseVal = (noisePointsRef.current[i] ?? 0) * (8 * dpr);
+        const noiseVal = (pointsSource[i] ?? 0) * ((mobile ? 16 : 8) * dpr);
         pathPoints.push({ x: px, y: py + noiseVal });
       }
 
@@ -229,7 +292,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       ctx.fillStyle = '#0d0d2e';
       ctx.fillRect(0, 0, gw, gh);
 
-      // Film Grain Overlay on Top Paper Layer (Exact algorithm from artifact)
+      // Film Grain Overlay on Top Paper Layer
       ctx.save();
       ctx.globalAlpha = 0.03;
       ctx.globalCompositeOperation = 'overlay';
@@ -253,14 +316,14 @@ export const ScrollPaperTearOverlay: React.FC = () => {
           tearLine.lineTo(pathPoints[i].x, pathPoints[i].y);
         }
 
-        // Heavy Cast Drop Shadow (from artifact)
+        // Heavy Cast Drop Shadow
         ctx.save();
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
-        ctx.shadowBlur = 26 * dpr;
-        ctx.shadowOffsetY = 14 * dpr;
-        ctx.shadowOffsetX = 5 * dpr;
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.9)';
-        ctx.lineWidth = 18 * dpr;
+        ctx.shadowColor = mobile ? 'rgba(0, 0, 0, 0.52)' : 'rgba(0, 0, 0, 0.9)';
+        ctx.shadowBlur = (mobile ? 24 : 26) * dpr;
+        ctx.shadowOffsetY = (mobile ? 18 : 14) * dpr;
+        ctx.shadowOffsetX = (mobile ? 8 : 5) * dpr;
+        ctx.strokeStyle = mobile ? 'rgba(0, 0, 0, 0.48)' : 'rgba(0, 0, 0, 0.9)';
+        ctx.lineWidth = (mobile ? 26 : 18) * dpr;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.stroke(tearLine);
@@ -268,7 +331,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
 
         // Inner Shadow Edge
         ctx.save();
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.55)';
+        ctx.strokeStyle = mobile ? 'rgba(0, 0, 0, 0.6)' : 'rgba(0, 0, 0, 0.55)';
         ctx.lineWidth = 10 * dpr;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
@@ -278,7 +341,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         // Cream Fibrous Paper Edge Highlight (#E8E0D5 from artifact)
         ctx.save();
         ctx.strokeStyle = '#e8e0d5';
-        ctx.lineWidth = 3 * dpr;
+        ctx.lineWidth = (mobile ? 11.2 : 3) * dpr;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.stroke(tearLine);
@@ -287,11 +350,11 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         // Crisp White Fiber Outline
         ctx.save();
         ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-        ctx.lineWidth = 1.1 * dpr;
+        ctx.lineWidth = (mobile ? 2.6 : 1.1) * dpr;
         ctx.stroke(tearLine);
         ctx.restore();
 
-        // Micro Fibers Extending Along Edge (from artifact)
+        // Micro Fibers Extending Along Edge
         ctx.save();
         ctx.strokeStyle = 'rgba(232, 224, 213, 0.65)';
         ctx.lineWidth = 0.8 * dpr;
@@ -362,7 +425,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   return (
     <div
       ref={containerRef}
-      className={`relative w-full ${isStatementScreen ? 'min-h-[400vh]' : 'h-[100dvh] overflow-hidden'} bg-[#0a080c] select-none touch-pan-y`}
+      className={`relative w-full ${isStatementScreen ? (isMobile ? 'min-h-[350vh]' : 'min-h-[400vh]') : 'h-[100dvh] overflow-hidden'} bg-[#0a080c] select-none touch-pan-y`}
     >
       {/* EXPANDING CENTRAL CIRCULAR AURA DOT */}
       <motion.div
@@ -510,30 +573,30 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       {isStatementScreen && (
         <section
           ref={portraitSectionRef}
-          className="relative z-20 w-full min-h-[110vh] px-6 sm:px-14 md:px-24 py-12 flex items-center justify-center overflow-hidden bg-gradient-to-b from-transparent via-[#1E1B4B]/40 to-[#0d0d2e]"
+          className="relative z-20 w-full min-h-[110vh] px-4 sm:px-14 md:px-24 py-12 flex items-center justify-center overflow-hidden bg-gradient-to-b from-transparent via-[#1E1B4B]/40 to-[#0d0d2e]"
         >
-          <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-12 lg:gap-16 items-center relative z-10 sticky top-[15vh]">
+          <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-8 sm:gap-12 lg:gap-16 items-center relative z-10 sticky top-[10vh] sm:top-[15vh]">
             {/* Left Column: Heading & Branding */}
             <motion.div
               style={{
                 opacity: textContentOpacity,
                 y: textContentY,
               }}
-              className="flex flex-col gap-6 order-2 lg:order-1 text-center lg:text-left"
+              className="flex flex-col gap-4 sm:gap-6 order-2 lg:order-1 text-center lg:text-left px-2 sm:px-0"
             >
-              <h1 className="font-black uppercase leading-[1.08] tracking-tight text-[#F5F0EB] text-4xl sm:text-6xl lg:text-7xl font-playfair drop-shadow-lg">
+              <h1 className="font-black uppercase leading-[1.08] tracking-tight text-[#F5F0EB] text-3xl sm:text-6xl lg:text-7xl font-playfair drop-shadow-lg">
                 Hi, I&apos;m{' '}
                 <span className="bg-gradient-to-r from-[#F5F0EB] via-[#FFB3CB] to-[#E91E8C] bg-clip-text text-transparent">
                   Arnav
                 </span>
               </h1>
 
-              <div className="flex flex-col gap-3 max-w-xl mx-auto lg:mx-0">
-                <p className="font-dmsans text-lg sm:text-2xl text-[#F5F0EB] font-light leading-relaxed">
+              <div className="flex flex-col gap-2 sm:gap-3 max-w-xl mx-auto lg:mx-0">
+                <p className="font-dmsans text-base sm:text-2xl text-[#F5F0EB] font-light leading-relaxed">
                   Building my brand while teaching you to build yours{' '}
                   <span className="text-[#E91E8C]">⭐️</span>
                 </p>
-                <p className="font-dmsans text-sm sm:text-base text-[#F5F0EB]/70 font-light leading-relaxed">
+                <p className="font-dmsans text-xs sm:text-base text-[#F5F0EB]/70 font-light leading-relaxed">
                   Personal brand strategist, Content creator, Storyteller, and Ghostwriter.
                 </p>
               </div>
@@ -542,15 +605,15 @@ export const ScrollPaperTearOverlay: React.FC = () => {
               <div className="pt-2 flex justify-center lg:justify-start">
                 <a
                   href="#brands"
-                  className="btn-gradient relative inline-flex items-center justify-center whitespace-nowrap rounded-full px-8 py-3.5 sm:px-10 sm:py-4 text-xs sm:text-sm font-bold uppercase tracking-widest text-white transition-all duration-300 hover:scale-[1.04] shadow-[0_4px_30px_rgba(233,30,140,0.5)]"
+                  className="btn-gradient relative inline-flex items-center justify-center whitespace-nowrap rounded-full px-6 py-3 sm:px-10 sm:py-4 text-xs sm:text-sm font-bold uppercase tracking-widest text-white transition-all duration-300 hover:scale-[1.04] shadow-[0_4px_30px_rgba(233,30,140,0.5)]"
                 >
                   Explore Brands & Impact &rarr;
                 </a>
               </div>
             </motion.div>
 
-            {/* Right Column: Hero Polaroid Portrait Frame */}
-            <div className="order-1 lg:order-2 flex flex-col items-center lg:items-end justify-center py-4">
+            {/* Right Column: Hero Polaroid Portrait Frame (Fully Centered and Fits 100% on Mobile) */}
+            <div className="order-1 lg:order-2 flex flex-col items-center lg:items-end justify-center py-2 sm:py-4">
               <motion.div
                 style={{
                   x: portraitX,
@@ -559,13 +622,13 @@ export const ScrollPaperTearOverlay: React.FC = () => {
                   scale: portraitScale,
                   opacity: portraitOpacity,
                 }}
-                className="relative w-[min(82vw,340px)] sm:w-[360px] my-2 cursor-pointer select-none transform-gpu"
+                className="relative w-[min(78vw,290px)] sm:w-[360px] my-2 cursor-pointer select-none transform-gpu"
               >
                 {/* Polaroid Radial Glow */}
                 <div className="pointer-events-none absolute inset-0 m-auto h-[85%] w-[85%] rounded-full blur-3xl bg-gradient-to-r from-[#FFB3CB]/40 via-[#E91E8C]/30 to-transparent" />
 
                 {/* White Polaroid Card */}
-                <div className="relative bg-white p-4 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85)] rounded-sm transform transition-all duration-500 ease-out hover:rotate-3 hover:scale-[1.03]">
+                <div className="relative bg-white p-3 sm:p-4 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85)] rounded-sm transform transition-all duration-500 ease-out hover:rotate-3 hover:scale-[1.03]">
                   <div className="relative overflow-hidden aspect-[2/3] bg-[#F5F0EB]">
                     <img
                       src="/assets/kamna-portrait.jpg"
@@ -575,7 +638,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
                   </div>
 
                   {/* Handwritten Polaroid Caption */}
-                  <p className="text-center text-[#0A0A0A]/85 font-caveat text-xl sm:text-2xl pt-3 pb-1 tracking-wide font-semibold">
+                  <p className="text-center text-[#0A0A0A]/85 font-caveat text-lg sm:text-2xl pt-2 sm:pt-3 pb-1 tracking-wide font-semibold">
                     @ariimakesflims
                   </p>
                 </div>
@@ -583,36 +646,36 @@ export const ScrollPaperTearOverlay: React.FC = () => {
                 {/* --- HANDWRITTEN POPUP STICKERS FROM KAMNA-PORTFOLIO --- */}
 
                 {/* 1. Sticker Top-Left: "21 years old" */}
-                <div className="pointer-events-none absolute -top-6 -left-6 sm:-left-10 z-30 transform -rotate-6">
-                  <div className="bg-[#FFB3CB] text-[#0A0A0A] font-caveat text-base sm:text-xl font-bold px-3 py-1 shadow-[4px_6px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
+                <div className="pointer-events-none absolute -top-5 -left-4 sm:-left-10 z-30 transform -rotate-6">
+                  <div className="bg-[#FFB3CB] text-[#0A0A0A] font-caveat text-xs sm:text-xl font-bold px-2.5 py-0.5 sm:px-3 sm:py-1 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
                     21 years old
                   </div>
                 </div>
 
                 {/* 2. Sticker Top-Right: "social media strategist" */}
-                <div className="pointer-events-none absolute -top-6 -right-6 sm:-right-12 z-30 transform rotate-6">
-                  <div className="bg-[#E91E8C] text-[#F5F0EB] font-caveat text-base sm:text-xl font-bold px-3 py-1 shadow-[4px_6px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
+                <div className="pointer-events-none absolute -top-5 -right-4 sm:-right-12 z-30 transform rotate-6">
+                  <div className="bg-[#E91E8C] text-[#F5F0EB] font-caveat text-xs sm:text-xl font-bold px-2.5 py-0.5 sm:px-3 sm:py-1 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
                     social media strategist
                   </div>
                 </div>
 
                 {/* 3. Sticker Middle-Left: "ghostwriter" */}
-                <div className="pointer-events-none absolute top-1/2 -left-10 sm:-left-16 transform -translate-y-1/2 -rotate-12 z-30">
-                  <div className="bg-[#FFB3CB] text-[#0A0A0A] font-caveat text-base sm:text-xl font-bold px-3 py-1 shadow-[4px_6px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
+                <div className="pointer-events-none absolute top-1/2 -left-6 sm:-left-16 transform -translate-y-1/2 -rotate-12 z-30">
+                  <div className="bg-[#FFB3CB] text-[#0A0A0A] font-caveat text-xs sm:text-xl font-bold px-2.5 py-0.5 sm:px-3 sm:py-1 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
                     ghostwriter
                   </div>
                 </div>
 
                 {/* 4. Sticker Bottom-Left: "content creator" */}
-                <div className="pointer-events-none absolute -bottom-8 -left-4 sm:-left-6 z-30 transform rotate-3">
-                  <div className="bg-[#FFB3CB] text-[#0A0A0A] font-caveat text-base sm:text-xl font-bold px-3 py-1 shadow-[4px_6px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
+                <div className="pointer-events-none absolute -bottom-6 -left-2 sm:-left-6 z-30 transform rotate-3">
+                  <div className="bg-[#FFB3CB] text-[#0A0A0A] font-caveat text-xs sm:text-xl font-bold px-2.5 py-0.5 sm:px-3 sm:py-1 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
                     content creator
                   </div>
                 </div>
 
                 {/* 5. Sticker Bottom-Right: "storyteller" */}
-                <div className="pointer-events-none absolute -bottom-8 -right-4 sm:-right-6 z-30 transform -rotate-3">
-                  <div className="bg-[#E91E8C] text-[#F5F0EB] font-caveat text-base sm:text-xl font-bold px-3 py-1 shadow-[4px_6px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
+                <div className="pointer-events-none absolute -bottom-6 -right-2 sm:-right-6 z-30 transform -rotate-3">
+                  <div className="bg-[#E91E8C] text-[#F5F0EB] font-caveat text-xs sm:text-xl font-bold px-2.5 py-0.5 sm:px-3 sm:py-1 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
                     storyteller
                   </div>
                 </div>
@@ -622,12 +685,12 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION FROM NEW ARTIFACT */}
+      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (PHONE OPTIMIZED TO REACH END ON SCROLL) */}
       {isStatementScreen && (
         <>
           <section
             ref={tearSectionRef}
-            className="relative z-20 w-full min-h-[160vh] overflow-hidden"
+            className={`relative z-20 w-full ${isMobile ? 'min-h-[120vh]' : 'min-h-[160vh]'} overflow-hidden`}
           >
             <div className="sticky top-0 left-0 w-full h-[100dvh] h-screen overflow-hidden bg-transparent">
               <div ref={canvasContainerRef} className="relative w-full h-full">
@@ -637,7 +700,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
           </section>
 
           {/* BRANDS & IMPACT SECTION SHIFTED UP TO TOUCH THE UPPER HORIZONTAL LINE EXACTLY */}
-          <div className="relative z-30 -mt-[60vh] bg-[#0a080c] text-white">
+          <div className={`relative z-30 ${isMobile ? '-mt-[45vh]' : '-mt-[60vh]'} bg-[#0a080c] text-white`}>
             <BrandCollaborationsSection />
           </div>
         </>
