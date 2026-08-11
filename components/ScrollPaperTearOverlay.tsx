@@ -49,6 +49,22 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   const isLastSentence = sentenceIdx === SEQUENCE_WORDS.length - 1;
   const isSentenceComplete = visibleCount >= currentWords.length;
 
+  // Lock body scroll until the entire kinetic typography reveal sequence is complete
+  useEffect(() => {
+    if (isLastSentence && isSentenceComplete) {
+      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = 'unset';
+    } else {
+      document.body.style.overflow = 'hidden';
+      document.documentElement.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = 'unset';
+    };
+  }, [isLastSentence, isSentenceComplete]);
+
   // Initialize Lenis ONLY on desktop pointer devices to keep mobile scrolling 100% native 60 FPS
   useEffect(() => {
     if (typeof window !== 'undefined' && window.matchMedia('(pointer: fine)').matches) {
@@ -137,11 +153,11 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   return (
     <div
       ref={containerRef}
-      className={`relative w-full ${isLastSentence && isSentenceComplete ? 'min-h-[220vh]' : 'min-h-[100dvh]'} bg-black touch-pan-y`}
+      className={`relative w-full ${isLastSentence && isSentenceComplete ? 'min-h-[220vh]' : 'h-[100dvh] overflow-hidden'} bg-black touch-pan-y`}
     >
       {/* STICKY FULL-VIEWPORT CANVAS WITH MOBILE DVH STABILITY */}
       <div className="sticky top-0 w-full h-[100dvh] h-screen overflow-hidden flex items-center justify-center bg-black z-10">
-        {/* LIGHTWEIGHT HIGH-PERFORMANCE NATIVE RADIAL AURA (NO HEAVY BLUR FILTER FOR 60 FPS MOBILE) */}
+        {/* LIGHTWEIGHT HIGH-PERFORMANCE NATIVE RADIAL AURA */}
         <motion.div
           style={{
             scale: auraScale,
@@ -193,7 +209,22 @@ export const ScrollPaperTearOverlay: React.FC = () => {
           </h1>
         </motion.div>
 
-        {/* ELEGANT SCROLL CUE ARROW */}
+        {/* INITIAL INSTRUCTION CUE: "TAP ANYWHERE" (UNTIL SEQUENCE COMPLETES) */}
+        {!(isLastSentence && isSentenceComplete) && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: [0.35, 0.85, 0.35] }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+            className="absolute bottom-8 sm:bottom-10 left-0 right-0 text-center pointer-events-none flex flex-col items-center justify-center gap-1.5 z-30"
+          >
+            <span className="font-mono-meta text-[10px] sm:text-[11px] text-white/70 uppercase tracking-[0.35em] font-bold drop-shadow">
+              TAP ANYWHERE TO CONTINUE
+            </span>
+            <span className="text-white/40 text-xs font-light">👆</span>
+          </motion.div>
+        )}
+
+        {/* ELEGANT SCROLL CUE ARROW (SHOWN ONLY ONCE TYPOGRAPHY COMPLETES & SCROLL IS UNLOCKED) */}
         {isLastSentence && isSentenceComplete && (
           <motion.div
             style={{ opacity: arrowOpacity }}
