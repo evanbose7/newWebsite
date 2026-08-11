@@ -102,14 +102,14 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   const textContentOpacity = useTransform(portraitScrollProgress, [0.12, 0.35], [0, 1]);
   const textContentY = useTransform(portraitScrollProgress, [0.12, 0.35], [40, 0]);
 
-  // Track scroll progress for Phase 4 (Paper Tear Section: Completes 100% when scrollbar is at the end)
+  // Track scroll progress for Phase 4 (Paper Tear Section)
   const { scrollYProgress: tearScrollProgress } = useScroll({
     target: tearSectionRef,
     offset: ['start start', 'end end'],
   });
 
-  // Paper tear progress starts at 0.05 and completes 100% precisely when scrollbar reaches the end (1.0)
-  const tearProgress = useTransform(tearScrollProgress, [0.05, 1.0], [0, 1]);
+  // PRECISE CALIBRATION: Paper tear reaches 100% completion at scrollbar position ~0.58 (matching uploaded screenshot)
+  const tearProgress = useTransform(tearScrollProgress, [0.04, 0.58], [0, 1]);
 
   // Cubic Easing Function for Natural Physical Paper Resistance
   const cubicEase = (v: number) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
@@ -180,12 +180,12 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       const pointsCount = noisePointsRef.current.length ? noisePointsRef.current.length - 1 : 30;
       const topY = gh * 0.2;
       const botY = gh * 0.8;
-      const cutX = t * gw;
+      const cutX = t * (gw * 1.6); // Fully sweeps 100% past screen bounds when t = 1
       const pathPoints: { x: number; y: number }[] = [];
 
       for (let i = 0; i <= pointsCount; i++) {
         const ratio = i / pointsCount;
-        const px = ratio * gw;
+        const px = ratio * (gw * 1.2);
         if (px > cutX + 0.5) break;
         const py = topY + (botY - topY) * ratio;
         const noiseVal = (noisePointsRef.current[i] ?? 0) * (8 * dpr);
@@ -242,7 +242,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       ctx.restore();
 
       // 3. RIPPED PAPER FIBER EDGES & 3D DEPTH SHADOWS (EXACT STYLING FROM NEW ARTIFACT)
-      if (t > 0.001 && pathPoints.length > 1) {
+      if (t > 0.001 && t < 0.999 && pathPoints.length > 1) {
         const tearLine = new Path2D();
         tearLine.moveTo(pathPoints[0].x, pathPoints[0].y);
         for (let i = 1; i < pathPoints.length; i++) {
@@ -618,7 +618,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (COMPLETES 100% PRECISELY AT SCROLLBAR END) */}
+      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (100% FULLY COMPLETED AT THE EXACT SCROLLBAR POSITION SHOWN IN RED) */}
       {isStatementScreen && (
         <section
           ref={tearSectionRef}
