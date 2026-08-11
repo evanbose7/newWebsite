@@ -114,7 +114,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   // Cubic Easing Function for Natural Physical Paper Resistance
   const cubicEase = (v: number) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
 
-  // 60 FPS Canvas Paper Tear Renderer revealing KAMNA-PORTFOLIO Background (#0A0A0A + Vibrant Top-Right Neon Magenta Radial Glow)
+  // 60 FPS Canvas Renderer with KAMNA-PORTFOLIO Background (#0A0A0A + Top-Right Glow) & NEON MAGENTA JAGGED LINE (#E91E8C)
   const renderCanvas = useCallback(
     (timestamp: number) => {
       const canvas = canvasRef.current;
@@ -151,7 +151,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
 
       ctx.clearRect(0, 0, gw, gh);
 
-      // 1. REVEALED BACKGROUND UNDER WHITE TEAR LINE: KAMNA-PORTFOLIO MATTE BLACK (#0A0A0A)
+      // 1. REVEALED AREA UNDER JAGGED LINE: KAMNA-PORTFOLIO MATTE BLACK (#0A0A0A)
       ctx.fillStyle = '#0a0a0a';
       ctx.fillRect(0, 0, gw, gh);
 
@@ -176,11 +176,12 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       ctx.fillStyle = vigGrad;
       ctx.fillRect(0, 0, gw, gh);
 
-      // 2. TOP PAPER MASK REVEAL (#0D0D2E UNIFORM TOP CANVAS FROM NEW ARTIFACT)
+      // 2. TOP PAPER MASK REVEAL (#0D0D2E UNIFORM TOP CANVAS WITH PERMANENT RESTING POSITION)
       const pointsCount = noisePointsRef.current.length ? noisePointsRef.current.length - 1 : 30;
       const topY = gh * 0.2;
       const botY = gh * 0.8;
-      const cutX = t * gw;
+      // Cut line sweeps from 0 to gw * 0.92 so the jagged paper tear line remains permanently resting on screen
+      const cutX = t * (gw * 0.92);
       const pathPoints: { x: number; y: number }[] = [];
 
       for (let i = 0; i <= pointsCount; i++) {
@@ -199,12 +200,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       clipPath.moveTo(0, 0);
       clipPath.lineTo(gw, 0);
       clipPath.lineTo(gw, gh);
-
-      if (t < 0.999) {
-        clipPath.lineTo(cutX, gh);
-      } else {
-        clipPath.lineTo(gw, botY);
-      }
+      clipPath.lineTo(cutX, gh);
 
       for (let i = pathPoints.length - 1; i >= 0; i--) {
         clipPath.lineTo(pathPoints[i].x, pathPoints[i].y);
@@ -213,11 +209,11 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       clipPath.closePath();
       ctx.clip(clipPath);
 
-      // Deep Navy Top Paper Canvas Fill (#0D0D2E from new artifact)
+      // Deep Navy Top Paper Canvas Fill (#0D0D2E)
       ctx.fillStyle = '#0d0d2e';
       ctx.fillRect(0, 0, gw, gh);
 
-      // Film Grain Overlay on Top Paper Layer (Exact algorithm from artifact)
+      // Film Grain Overlay on Top Paper Layer
       ctx.save();
       ctx.globalAlpha = 0.03;
       ctx.globalCompositeOperation = 'overlay';
@@ -241,7 +237,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
 
       ctx.restore();
 
-      // 3. RIPPED PAPER FIBER EDGES & 3D DEPTH SHADOWS (EXACT STYLING FROM NEW ARTIFACT)
+      // 3. RIPPED PAPER FIBER EDGES & 3D DEPTH SHADOWS (SIGNATURE KAMNA-PORTFOLIO NEON MAGENTA #E91E8C & SOFT PINK #FFB3CB)
       if (t > 0.001 && pathPoints.length > 1) {
         const tearLine = new Path2D();
         tearLine.moveTo(pathPoints[0].x, pathPoints[0].y);
@@ -249,7 +245,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
           tearLine.lineTo(pathPoints[i].x, pathPoints[i].y);
         }
 
-        // Heavy Cast Drop Shadow (from new artifact)
+        // Heavy Cast Drop Shadow
         ctx.save();
         ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
         ctx.shadowBlur = 26 * dpr;
@@ -271,33 +267,44 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         ctx.stroke(tearLine);
         ctx.restore();
 
-        // Cream Fibrous Paper Edge Highlight (#E8E0D5 from new artifact)
+        // Signature Neon Magenta Edge Glow Line (#E91E8C from kamna-portfolio)
         ctx.save();
-        ctx.strokeStyle = '#e8e0d5';
-        ctx.lineWidth = 3 * dpr;
+        ctx.strokeStyle = '#E91E8C';
+        ctx.lineWidth = 4 * dpr;
+        ctx.shadowColor = '#E91E8C';
+        ctx.shadowBlur = 14 * dpr;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.stroke(tearLine);
         ctx.restore();
 
-        // Crisp White Fiber Outline
+        // Soft Pink Fibrous Highlight Line (#FFB3CB from kamna-portfolio)
         ctx.save();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-        ctx.lineWidth = 1.1 * dpr;
+        ctx.strokeStyle = '#FFB3CB';
+        ctx.lineWidth = 2 * dpr;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
         ctx.stroke(tearLine);
         ctx.restore();
 
-        // Micro Fibers Extending Along Edge (from new artifact)
+        // Crisp Inner Core Highlight (#FFFFFF)
         ctx.save();
-        ctx.strokeStyle = 'rgba(232, 224, 213, 0.65)';
-        ctx.lineWidth = 0.8 * dpr;
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 1 * dpr;
+        ctx.stroke(tearLine);
+        ctx.restore();
+
+        // Micro Fibers in Pink Accent (#FFB3CB / #E91E8C from kamna-portfolio)
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 179, 203, 0.85)';
+        ctx.lineWidth = 0.9 * dpr;
         for (let i = 1; i < pathPoints.length - 1; i += 3) {
           if (Math.random() > 0.6) continue;
           const pt = pathPoints[i];
           const angle =
             Math.atan2(pathPoints[i + 1].y - pathPoints[i - 1].y, pathPoints[i + 1].x - pathPoints[i - 1].x) +
             Math.PI / 2;
-          const len = (2 + Math.random() * 5) * dpr;
+          const len = (2.5 + Math.random() * 5) * dpr;
           const dir = Math.random() > 0.5 ? 1 : -0.5;
           ctx.beginPath();
           ctx.moveTo(pt.x, pt.y);
@@ -618,7 +625,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (REVEALING KAMNA-PORTFOLIO MATTE BLACK #0A0A0A + NEON MAGENTA AURA) */}
+      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (SIGNATURE KAMNA-PORTFOLIO #E91E8C / #FFB3CB NEON JAGGED LINE) */}
       {isStatementScreen && (
         <section
           ref={tearSectionRef}
