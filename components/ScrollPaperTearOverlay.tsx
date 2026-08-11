@@ -103,7 +103,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       onClick={handleTap}
       className="relative w-full h-[100dvh] h-screen bg-black overflow-hidden flex items-center justify-center cursor-pointer select-none touch-pan-y"
     >
-      {/* 100% MOBILE GPU ACCELERATED FULLSCREEN ROYAL AURA (LOCKED 60 FPS OPACITY FADE) */}
+      {/* 100% FULLSCREEN VIBRANT ROYAL AURA - EDGE TO EDGE FULL COVERAGE (ZERO DARK BORDERS) */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{
@@ -113,15 +113,15 @@ export const ScrollPaperTearOverlay: React.FC = () => {
           duration: 1.8,
           ease: [0.25, 0.1, 0.25, 1.0],
         }}
-        className="absolute inset-0 w-full h-full pointer-events-none z-0 bg-[radial-gradient(circle_at_center,_#EC4899_0%,_#8B5CF6_28%,_#3B82F6_52%,_#1E1B4B_76%,_#0B0F19_100%)] transform-gpu will-change-[opacity]"
+        className="absolute inset-0 w-full h-full pointer-events-none z-0 bg-[radial-gradient(circle_at_center,_#EC4899_0%,_#8B5CF6_25%,_#3B82F6_50%,_#1E1B4B_82%,_#171233_100%)] transform-gpu will-change-[opacity]"
       />
 
-      {/* Dynamic Ambient Atmosphere Depth Layer */}
+      {/* Dynamic Ambient Atmosphere Depth Layer Filling All Borders */}
       <motion.div
         initial={{ opacity: 0 }}
-        animate={{ opacity: isFinalScreen ? 0.85 : 0 }}
+        animate={{ opacity: isFinalScreen ? 1 : 0 }}
         transition={{ duration: 1.8, ease: 'easeInOut' }}
-        className="absolute inset-0 w-full h-full pointer-events-none z-0 bg-gradient-to-b from-[#0F172A]/50 via-[#1E1B4B]/70 to-[#0B0F19] transform-gpu"
+        className="absolute inset-0 w-full h-full pointer-events-none z-0 bg-gradient-to-b from-[#1E1035] via-[#1E1B4B] to-[#171233] transform-gpu"
       />
 
       {/* QUESTION SENTENCES (PHASE 1 - CLICK/TAP TO REVEAL) */}
