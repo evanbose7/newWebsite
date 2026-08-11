@@ -52,7 +52,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   const noisePointsRef = useRef<number[]>([]);
   const pulseRef = useRef<number>(0);
 
-  // Seed procedural jagged points for authentic fibrous paper tear from user artifact
+  // Seed procedural jagged points for authentic fibrous paper tear
   useEffect(() => {
     const points: number[] = [];
     let seed = 98765;
@@ -114,7 +114,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   // Cubic Easing Function for Natural Physical Paper Resistance
   const cubicEase = (v: number) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
 
-  // 60 FPS Canvas Paper Tear Renderer revealing KAMNA-PORTFOLIO Background (#0A0A0A + Vibrant Top-Right Neon Magenta Radial Glow)
+  // 60 FPS Canvas Renderer: Entire area UNDER white jagged line is 100% KAMNA-PORTFOLIO background (#0A0A0A + Top-Right Neon Magenta Glow)
   const renderCanvas = useCallback(
     (timestamp: number) => {
       const canvas = canvasRef.current;
@@ -151,13 +151,13 @@ export const ScrollPaperTearOverlay: React.FC = () => {
 
       ctx.clearRect(0, 0, gw, gh);
 
-      // 1. REVEALED BACKGROUND UNDER WHITE TEAR LINE: KAMNA-PORTFOLIO MATTE BLACK (#0A0A0A)
+      // 1. REVEALED AREA UNDER WHITE JAGGED PAPER LINE: KAMNA-PORTFOLIO MATTE BLACK (#0A0A0A)
       ctx.fillStyle = '#0a0a0a';
       ctx.fillRect(0, 0, gw, gh);
 
       // Vibrant Top-Right Neon Magenta Radial Atmosphere Glow (#E91E8C from kamna-portfolio)
       const cx = gw * 0.75;
-      const cy = gh * 0.3;
+      const cy = gh * 0.25;
       const auraRadius = Math.max(gw, gh) * 0.75;
       const pulseMult = 1 + Math.sin(pulse) * 0.05;
       const auraGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, auraRadius * pulseMult);
@@ -176,11 +176,12 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       ctx.fillStyle = vigGrad;
       ctx.fillRect(0, 0, gw, gh);
 
-      // 2. TOP PAPER MASK REVEAL (#0D0D2E UNIFORM TOP CANVAS FROM NEW ARTIFACT)
+      // 2. TOP NAVY PAPER LAYER (#0D0D2E) CLIPPED STRICTLY ABOVE THE WHITE JAGGED LINE
       const pointsCount = noisePointsRef.current.length ? noisePointsRef.current.length - 1 : 30;
-      const topY = gh * 0.2;
-      const botY = gh * 0.8;
-      const cutX = t * gw;
+      const topY = gh * 0.15;
+      const botY = gh * 0.45;
+      // Cut line sweeps smoothly as user scrolls, revealing the kamna-portfolio background underneath
+      const cutX = t * (gw * 1.1);
       const pathPoints: { x: number; y: number }[] = [];
 
       for (let i = 0; i <= pointsCount; i++) {
@@ -194,17 +195,12 @@ export const ScrollPaperTearOverlay: React.FC = () => {
 
       if (pathPoints.length === 0) pathPoints.push({ x: 0, y: topY });
 
+      // Clip Path for TOP paper polygon (ABOVE the tear line)
       ctx.save();
       const clipPath = new Path2D();
       clipPath.moveTo(0, 0);
       clipPath.lineTo(gw, 0);
-      clipPath.lineTo(gw, gh);
-
-      if (t < 0.999) {
-        clipPath.lineTo(cutX, gh);
-      } else {
-        clipPath.lineTo(gw, botY);
-      }
+      clipPath.lineTo(gw, pathPoints[pathPoints.length - 1]?.y ?? topY);
 
       for (let i = pathPoints.length - 1; i >= 0; i--) {
         clipPath.lineTo(pathPoints[i].x, pathPoints[i].y);
@@ -213,11 +209,11 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       clipPath.closePath();
       ctx.clip(clipPath);
 
-      // Deep Navy Top Paper Canvas Fill (#0D0D2E from new artifact)
+      // Deep Navy Top Paper Canvas Fill (#0D0D2E)
       ctx.fillStyle = '#0d0d2e';
       ctx.fillRect(0, 0, gw, gh);
 
-      // Film Grain Overlay on Top Paper Layer (Exact algorithm from artifact)
+      // Film Grain Overlay on Top Paper Layer
       ctx.save();
       ctx.globalAlpha = 0.03;
       ctx.globalCompositeOperation = 'overlay';
@@ -231,7 +227,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       }
       ctx.restore();
 
-      // Top Edge Soft Feathering to eliminate any horizontal seam line
+      // Top Edge Soft Feathering to eliminate any horizontal seam line with hero
       const topFeatherHeight = 160 * dpr;
       const featherGrad = ctx.createLinearGradient(0, 0, 0, topFeatherHeight);
       featherGrad.addColorStop(0, 'rgba(13, 13, 46, 1.0)');
@@ -241,7 +237,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
 
       ctx.restore();
 
-      // 3. RIPPED PAPER FIBER EDGES & 3D DEPTH SHADOWS (EXACT STYLING FROM NEW ARTIFACT)
+      // 3. CRISP WHITE JAGGED PAPER TEAR LINE & 3D DEPTH SHADOWS
       if (t > 0.001 && pathPoints.length > 1) {
         const tearLine = new Path2D();
         tearLine.moveTo(pathPoints[0].x, pathPoints[0].y);
@@ -249,7 +245,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
           tearLine.lineTo(pathPoints[i].x, pathPoints[i].y);
         }
 
-        // Heavy Cast Drop Shadow (from new artifact)
+        // Heavy Cast Drop Shadow
         ctx.save();
         ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
         ctx.shadowBlur = 26 * dpr;
@@ -271,33 +267,35 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         ctx.stroke(tearLine);
         ctx.restore();
 
-        // Cream Fibrous Paper Edge Highlight (#E8E0D5 from new artifact)
+        // Cream Fibrous Paper Edge Highlight (#E8E0D5)
         ctx.save();
         ctx.strokeStyle = '#e8e0d5';
-        ctx.lineWidth = 3 * dpr;
+        ctx.lineWidth = 3.2 * dpr;
         ctx.lineCap = 'round';
         ctx.lineJoin = 'round';
         ctx.stroke(tearLine);
         ctx.restore();
 
-        // Crisp White Fiber Outline
+        // Solid Crisp White Outline (PERMANENT WHITE JAGGED PAPER LINE)
         ctx.save();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-        ctx.lineWidth = 1.1 * dpr;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.4 * dpr;
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+        ctx.shadowBlur = 4 * dpr;
         ctx.stroke(tearLine);
         ctx.restore();
 
-        // Micro Fibers Extending Along Edge (from new artifact)
+        // Micro Fibers Extending Along Edge
         ctx.save();
-        ctx.strokeStyle = 'rgba(232, 224, 213, 0.65)';
-        ctx.lineWidth = 0.8 * dpr;
+        ctx.strokeStyle = 'rgba(232, 224, 213, 0.75)';
+        ctx.lineWidth = 0.9 * dpr;
         for (let i = 1; i < pathPoints.length - 1; i += 3) {
           if (Math.random() > 0.6) continue;
           const pt = pathPoints[i];
           const angle =
             Math.atan2(pathPoints[i + 1].y - pathPoints[i - 1].y, pathPoints[i + 1].x - pathPoints[i - 1].x) +
             Math.PI / 2;
-          const len = (2 + Math.random() * 5) * dpr;
+          const len = (2.5 + Math.random() * 5) * dpr;
           const dir = Math.random() > 0.5 ? 1 : -0.5;
           ctx.beginPath();
           ctx.moveTo(pt.x, pt.y);
@@ -358,7 +356,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   return (
     <div
       ref={containerRef}
-      className={`relative w-full ${isStatementScreen ? 'min-h-[420vh]' : 'h-[100dvh] overflow-hidden'} bg-[#0d0d2e] select-none touch-pan-y`}
+      className={`relative w-full ${isStatementScreen ? 'min-h-[420vh]' : 'h-[100dvh] overflow-hidden'} bg-[#0a0a0a] select-none touch-pan-y`}
     >
       {/* EXPANDING CENTRAL CIRCULAR AURA DOT */}
       <motion.div
@@ -371,7 +369,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
           duration: 3.4,
           ease: [0.25, 0.1, 0.25, 1.0],
         }}
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] sm:w-[600px] sm:h-[600px] rounded-full pointer-events-none z-0 bg-[radial-gradient(circle_at_center,_#EC4899_0%,_#8B5CF6_25%,_#3B82F6_50%,_#1E1B4B_82%,_#0d0d2e_100%)] shadow-[0_0_120px_rgba(236,72,153,0.8)] transform-gpu will-change-transform"
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] sm:w-[600px] sm:h-[600px] rounded-full pointer-events-none z-0 bg-[radial-gradient(circle_at_center,_#EC4899_0%,_#8B5CF6_25%,_#3B82F6_50%,_#1E1B4B_82%,_#0a0a0a_100%)] shadow-[0_0_120px_rgba(236,72,153,0.8)] transform-gpu will-change-transform"
       />
 
       {/* Dynamic Ambient Atmosphere Depth Layer */}
@@ -379,7 +377,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         initial={{ opacity: 0 }}
         animate={{ opacity: isStatementScreen ? 1 : 0 }}
         transition={{ duration: 3.4, ease: 'easeInOut' }}
-        className="fixed inset-0 w-full h-full pointer-events-none z-0 bg-gradient-to-b from-[#1E1035] via-[#1E1B4B] to-[#0d0d2e] transform-gpu"
+        className="fixed inset-0 w-full h-full pointer-events-none z-0 bg-gradient-to-b from-[#1E1035] via-[#1E1B4B] to-[#0a0a0a] transform-gpu"
       />
 
       {/* QUESTION SENTENCES (PHASE 1 - CLICK/TAP TO REVEAL) */}
@@ -502,11 +500,11 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 3: HERO POLAROID PORTRAIT DIAGONAL ENTRANCE SECTION (RESTS 100% FULL IN VIEWPORT FIRST & BLENDS SEAMLESSLY INTO #0D0D2E) */}
+      {/* PHASE 3: HERO POLAROID PORTRAIT DIAGONAL ENTRANCE SECTION (RESTS 100% FULL IN VIEWPORT FIRST & BLENDS SEAMLESSLY INTO #0A0A0A) */}
       {isStatementScreen && (
         <section
           ref={portraitSectionRef}
-          className="relative z-20 w-full min-h-[140vh] px-6 sm:px-14 md:px-24 py-20 flex items-center justify-center overflow-hidden bg-gradient-to-b from-transparent via-[#1E1B4B]/40 to-[#0d0d2e]"
+          className="relative z-20 w-full min-h-[140vh] px-6 sm:px-14 md:px-24 py-20 flex items-center justify-center overflow-hidden bg-gradient-to-b from-transparent via-[#1E1B4B]/30 to-[#0a0a0a]"
         >
           <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-12 lg:gap-16 items-center relative z-10 sticky top-[15vh]">
             {/* Left Column: Heading & Branding */}
@@ -618,7 +616,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (REVEALING KAMNA-PORTFOLIO MATTE BLACK #0A0A0A + NEON MAGENTA AURA) */}
+      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (ENTIRE AREA UNDER WHITE LINE IS 100% KAMNA-PORTFOLIO MATTE BLACK #0A0A0A + NEON MAGENTA AURA) */}
       {isStatementScreen && (
         <section
           ref={tearSectionRef}
