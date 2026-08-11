@@ -114,7 +114,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   // Cubic Easing Function for Natural Physical Paper Resistance
   const cubicEase = (v: number) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
 
-  // Exact 60 FPS Canvas Paper Tear Renderer from User's New Artifact
+  // 60 FPS Canvas Paper Tear Renderer revealing KAMNA-PORTFOLIO Background (#0A0A0A + Vibrant Top-Right Neon Magenta Radial Glow)
   const renderCanvas = useCallback(
     (timestamp: number) => {
       const canvas = canvasRef.current;
@@ -151,25 +151,25 @@ export const ScrollPaperTearOverlay: React.FC = () => {
 
       ctx.clearRect(0, 0, gw, gh);
 
-      // 1. BOTTOM REVEALED FULLSCREEN CANVAS LAYER (#08080C WITH NEON MAGENTA AURA)
-      ctx.fillStyle = '#08080c';
+      // 1. REVEALED BACKGROUND UNDER WHITE TEAR LINE: KAMNA-PORTFOLIO MATTE BLACK (#0A0A0A)
+      ctx.fillStyle = '#0a0a0a';
       ctx.fillRect(0, 0, gw, gh);
 
-      // Radial Glowing Atmosphere Overlay (Exact from new artifact)
-      const cx = gw * 0.7;
-      const cy = gh * 0.6;
-      const auraRadius = gw * 0.8;
-      const pulseMult = 1 + Math.sin(pulse) * 0.06;
+      // Vibrant Top-Right Neon Magenta Radial Atmosphere Glow (#E91E8C from kamna-portfolio)
+      const cx = gw * 0.75;
+      const cy = gh * 0.3;
+      const auraRadius = Math.max(gw, gh) * 0.75;
+      const pulseMult = 1 + Math.sin(pulse) * 0.05;
       const auraGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, auraRadius * pulseMult);
-      auraGrad.addColorStop(0, `rgba(255, 20, 147, ${0.9 + Math.sin(pulse * 1.1) * 0.06})`);
-      auraGrad.addColorStop(0.14, 'rgba(255, 20, 147, 0.42)');
-      auraGrad.addColorStop(0.32, 'rgba(255, 20, 147, 0.14)');
-      auraGrad.addColorStop(0.58, 'rgba(255, 20, 147, 0.03)');
-      auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      auraGrad.addColorStop(0, `rgba(233, 30, 140, ${0.95 + Math.sin(pulse * 1.1) * 0.05})`);
+      auraGrad.addColorStop(0.22, 'rgba(233, 30, 140, 0.55)');
+      auraGrad.addColorStop(0.45, 'rgba(255, 179, 203, 0.22)');
+      auraGrad.addColorStop(0.72, 'rgba(233, 30, 140, 0.05)');
+      auraGrad.addColorStop(1, 'rgba(10, 10, 10, 0)');
       ctx.fillStyle = auraGrad;
       ctx.fillRect(0, 0, gw, gh);
 
-      // Vignette Overlay (Exact from new artifact)
+      // Subtle Fullscreen Vignette Depth
       const vigGrad = ctx.createRadialGradient(gw * 0.5, gh * 0.5, gh * 0.25, gw * 0.5, gh * 0.5, gw * 0.9);
       vigGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
       vigGrad.addColorStop(1, 'rgba(0, 0, 0, 0.55)');
@@ -618,7 +618,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (NEW ARTIFACT ANIMATION INTEGRATION) */}
+      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (REVEALING KAMNA-PORTFOLIO MATTE BLACK #0A0A0A + NEON MAGENTA AURA) */}
       {isStatementScreen && (
         <section
           ref={tearSectionRef}
