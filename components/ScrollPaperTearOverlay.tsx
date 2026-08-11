@@ -102,14 +102,14 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   const textContentOpacity = useTransform(portraitScrollProgress, [0.12, 0.35], [0, 1]);
   const textContentY = useTransform(portraitScrollProgress, [0.12, 0.35], [40, 0]);
 
-  // Track scroll progress for Phase 4 (Paper Tear Section: ONLY starts when user scrolls DOWN PAST the hero portrait)
+  // Track scroll progress for Phase 4 (Paper Tear Section: Completes 100% when scrollbar is at the end)
   const { scrollYProgress: tearScrollProgress } = useScroll({
     target: tearSectionRef,
-    offset: ['start start', 'end start'],
+    offset: ['start start', 'end end'],
   });
 
-  // Paper tear starts tearing LATE — strictly after user scrolls past the full hero portrait screen
-  const tearProgress = useTransform(tearScrollProgress, [0.05, 0.85], [0, 1]);
+  // Paper tear progress starts at 0.05 and completes 100% precisely when scrollbar reaches the end (1.0)
+  const tearProgress = useTransform(tearScrollProgress, [0.05, 1.0], [0, 1]);
 
   // Cubic Easing Function for Natural Physical Paper Resistance
   const cubicEase = (v: number) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
@@ -618,7 +618,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (100% UNIFIED COLOR MATCH WITH ZERO SEAM LINE) */}
+      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (COMPLETES 100% PRECISELY AT SCROLLBAR END) */}
       {isStatementScreen && (
         <section
           ref={tearSectionRef}
