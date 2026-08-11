@@ -52,7 +52,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   const noisePointsRef = useRef<number[]>([]);
   const pulseRef = useRef<number>(0);
 
-  // Seed procedural jagged points for authentic fibrous paper tear from artifact
+  // Seed procedural jagged points for authentic fibrous paper tear from new artifact
   useEffect(() => {
     const points: number[] = [];
     let seed = 98765;
@@ -114,12 +114,11 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   // Cubic Easing Function for Natural Physical Paper Resistance
   const cubicEase = (v: number) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
 
-  // High-Performance 60 FPS FULL-SCREEN Canvas Paper Tear Renderer from Artifact
+  // Exact 60 FPS Canvas Paper Tear Renderer from User's New Artifact
   const renderCanvas = useCallback(
     (timestamp: number) => {
       const canvas = canvasRef.current;
-      const container = canvasContainerRef.current;
-      if (!canvas || !container) {
+      if (!canvas) {
         tearAnimationRef.current = requestAnimationFrame(renderCanvas);
         return;
       }
@@ -152,11 +151,11 @@ export const ScrollPaperTearOverlay: React.FC = () => {
 
       ctx.clearRect(0, 0, gw, gh);
 
-      // BOTTOM REVEALED CANVAS LAYER (#08080C WITH VIBRANT PINK AURA)
+      // 1. BOTTOM REVEALED FULLSCREEN CANVAS LAYER (#08080C WITH NEON MAGENTA AURA)
       ctx.fillStyle = '#08080c';
       ctx.fillRect(0, 0, gw, gh);
 
-      // Radial Glowing Atmosphere Overlay from Artifact
+      // Radial Glowing Atmosphere Overlay (Exact from new artifact)
       const cx = gw * 0.7;
       const cy = gh * 0.6;
       const auraRadius = gw * 0.8;
@@ -170,14 +169,14 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       ctx.fillStyle = auraGrad;
       ctx.fillRect(0, 0, gw, gh);
 
-      // Vignette Overlay
+      // Vignette Overlay (Exact from new artifact)
       const vigGrad = ctx.createRadialGradient(gw * 0.5, gh * 0.5, gh * 0.25, gw * 0.5, gh * 0.5, gw * 0.9);
       vigGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
       vigGrad.addColorStop(1, 'rgba(0, 0, 0, 0.55)');
       ctx.fillStyle = vigGrad;
       ctx.fillRect(0, 0, gw, gh);
 
-      // TOP PAPER MASK REVEAL (DIAGONAL CUT MASK FROM ARTIFACT)
+      // 2. TOP PAPER MASK REVEAL (#0D0D2E UNIFORM TOP CANVAS FROM NEW ARTIFACT)
       const pointsCount = noisePointsRef.current.length ? noisePointsRef.current.length - 1 : 30;
       const topY = gh * 0.2;
       const botY = gh * 0.8;
@@ -214,25 +213,11 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       clipPath.closePath();
       ctx.clip(clipPath);
 
-      // Top Paper Canvas Background Gradient (Matching Hero Atmosphere #1E1035 -> #1E1B4B -> #171233)
-      const topPaperGrad = ctx.createLinearGradient(0, 0, 0, gh);
-      topPaperGrad.addColorStop(0, '#1E1035');
-      topPaperGrad.addColorStop(0.5, '#1E1B4B');
-      topPaperGrad.addColorStop(1, '#171233');
-      ctx.fillStyle = topPaperGrad;
+      // Deep Navy Top Paper Canvas Fill (#0D0D2E from artifact)
+      ctx.fillStyle = '#0d0d2e';
       ctx.fillRect(0, 0, gw, gh);
 
-      // Central Royal Aura Overlay on Top Paper Layer
-      const topAuraGrad = ctx.createRadialGradient(gw * 0.5, gh * 0.5, 0, gw * 0.5, gh * 0.5, Math.max(gw, gh) * 0.65);
-      topAuraGrad.addColorStop(0, 'rgba(236, 72, 153, 0.7)');
-      topAuraGrad.addColorStop(0.25, 'rgba(139, 92, 246, 0.5)');
-      topAuraGrad.addColorStop(0.5, 'rgba(59, 130, 246, 0.35)');
-      topAuraGrad.addColorStop(0.82, 'rgba(30, 27, 75, 0.2)');
-      topAuraGrad.addColorStop(1, 'rgba(23, 18, 51, 0)');
-      ctx.fillStyle = topAuraGrad;
-      ctx.fillRect(0, 0, gw, gh);
-
-      // Film Grain Overlay on Top Paper Layer (from Artifact)
+      // Film Grain Overlay on Top Paper Layer (Exact algorithm from artifact)
       ctx.save();
       ctx.globalAlpha = 0.03;
       ctx.globalCompositeOperation = 'overlay';
@@ -248,7 +233,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
 
       ctx.restore();
 
-      // RIPPED PAPER FIBER EDGES & 3D DEPTH SHADOWS (EXACT STYLING FROM ARTIFACT)
+      // 3. RIPPED PAPER FIBER EDGES & 3D DEPTH SHADOWS (EXACT STYLING FROM NEW ARTIFACT)
       if (t > 0.001 && pathPoints.length > 1) {
         const tearLine = new Path2D();
         tearLine.moveTo(pathPoints[0].x, pathPoints[0].y);
@@ -256,7 +241,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
           tearLine.lineTo(pathPoints[i].x, pathPoints[i].y);
         }
 
-        // Heavy Cast Drop Shadow (from Artifact)
+        // Heavy Cast Drop Shadow (from new artifact)
         ctx.save();
         ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
         ctx.shadowBlur = 26 * dpr;
@@ -278,7 +263,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         ctx.stroke(tearLine);
         ctx.restore();
 
-        // Cream Fibrous Paper Edge Highlight (#E8E0D5 from Artifact)
+        // Cream Fibrous Paper Edge Highlight (#E8E0D5 from new artifact)
         ctx.save();
         ctx.strokeStyle = '#e8e0d5';
         ctx.lineWidth = 3 * dpr;
@@ -294,7 +279,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         ctx.stroke(tearLine);
         ctx.restore();
 
-        // Micro Fibers Extending Along Edge (from Artifact)
+        // Micro Fibers Extending Along Edge (from new artifact)
         ctx.save();
         ctx.strokeStyle = 'rgba(232, 224, 213, 0.65)';
         ctx.lineWidth = 0.8 * dpr;
@@ -625,7 +610,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (NEW ARTIFACT INTEGRATION) */}
+      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (EXACT IMPLEMENTATION FROM USER'S NEW ARTIFACT) */}
       {isStatementScreen && (
         <section
           ref={tearSectionRef}
