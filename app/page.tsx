@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { ScrollPaperTearOverlay } from '../components/ScrollPaperTearOverlay';
+import { ScrollPaperTearOverlay } from '@/components/ScrollPaperTearOverlay';
 
 export default function HomePage() {
   return (

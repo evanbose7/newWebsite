@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
+import { BrandCollaborationsSection } from './BrandCollaborationsSection';
 
 interface WordItem {
   text: string;
@@ -52,7 +53,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   const noisePointsRef = useRef<number[]>([]);
   const pulseRef = useRef<number>(0);
 
-  // Seed procedural jagged points for authentic fibrous paper tear from user artifact
+  // Seed procedural jagged points for authentic fibrous paper tear matching artifact
   useEffect(() => {
     const points: number[] = [];
     let seed = 98765;
@@ -102,19 +103,19 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   const textContentOpacity = useTransform(portraitScrollProgress, [0.12, 0.35], [0, 1]);
   const textContentY = useTransform(portraitScrollProgress, [0.12, 0.35], [40, 0]);
 
-  // Track scroll progress for Phase 4 (Paper Tear Section)
+  // Track scroll progress for Phase 4 (Paper Tear Section): Begins IMMEDIATELY when scrollbar reaches it
   const { scrollYProgress: tearScrollProgress } = useScroll({
     target: tearSectionRef,
-    offset: ['start start', 'end end'],
+    offset: ['start 90%', 'end 20%'],
   });
 
-  // PRECISE START & END CALIBRATION: Starts at scrollbar ~0.44 and ends at ~0.78
-  const tearProgress = useTransform(tearScrollProgress, [0.44, 0.78], [0, 1]);
+  // RESPONSIVE SCROLL TEAR PROGRESS: Tears open smoothly from 0 to 1 as you scroll
+  const tearProgress = useTransform(tearScrollProgress, [0.0, 0.85], [0, 1]);
 
-  // Cubic Easing Function for Natural Physical Paper Resistance
+  // Cubic Easing Function for Natural Physical Paper Resistance (matching artifact)
   const cubicEase = (v: number) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
 
-  // 60 FPS Canvas Paper Tear Renderer revealing KAMNA-PORTFOLIO Background (#0A0A0A + Vibrant Top-Right Neon Magenta Radial Glow)
+  // 60 FPS Canvas Paper Tear Renderer MATCHING NEW ARTIFACT EXACTLY
   const renderCanvas = useCallback(
     (timestamp: number) => {
       const canvas = canvasRef.current;
@@ -151,32 +152,43 @@ export const ScrollPaperTearOverlay: React.FC = () => {
 
       ctx.clearRect(0, 0, gw, gh);
 
-      // 1. REVEALED BACKGROUND UNDER WHITE TEAR LINE: KAMNA-PORTFOLIO MATTE BLACK (#0A0A0A)
-      ctx.fillStyle = '#0a0a0a';
+      // 1. REVEALED BACKGROUND UNDER WHITE TEAR LINE: ARTIFACT EXACT #0a080c + PLUM RADIAL GRADIENTS
+      ctx.fillStyle = '#0a080c';
       ctx.fillRect(0, 0, gw, gh);
 
-      // Vibrant Top-Right Neon Magenta Radial Atmosphere Glow (#E91E8C from kamna-portfolio)
-      const cx = gw * 0.75;
-      const cy = gh * 0.3;
-      const auraRadius = Math.max(gw, gh) * 0.75;
-      const pulseMult = 1 + Math.sin(pulse) * 0.05;
+      // Multi-Stage Base Radial Gradient (exact from artifact)
+      const baseGrad = ctx.createRadialGradient(gw * 0.52, gh * 0.58, 0, gw * 0.52, gh * 0.58, gw * 0.9);
+      baseGrad.addColorStop(0, '#0f0a0f');
+      baseGrad.addColorStop(0.32, '#0d090d');
+      baseGrad.addColorStop(0.58, '#09080b');
+      baseGrad.addColorStop(0.85, '#06050a');
+      baseGrad.addColorStop(1, '#050508');
+      ctx.fillStyle = baseGrad;
+      ctx.fillRect(0, 0, gw, gh);
+
+      // Pulsing Plum/Dark Violet Radial Glow (exact from artifact)
+      const cx = gw * 0.54;
+      const cy = gh * 0.68;
+      const auraRadius = gw * 0.58;
+      const pulseMult = 1 + Math.sin(pulse * 0.7) * 0.018;
       const auraGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, auraRadius * pulseMult);
-      auraGrad.addColorStop(0, `rgba(233, 30, 140, ${0.95 + Math.sin(pulse * 1.1) * 0.05})`);
-      auraGrad.addColorStop(0.22, 'rgba(233, 30, 140, 0.55)');
-      auraGrad.addColorStop(0.45, 'rgba(255, 179, 203, 0.22)');
-      auraGrad.addColorStop(0.72, 'rgba(233, 30, 140, 0.05)');
-      auraGrad.addColorStop(1, 'rgba(10, 10, 10, 0)');
+      auraGrad.addColorStop(0, 'rgba(28, 16, 32, 0.15)');
+      auraGrad.addColorStop(0.22, 'rgba(28, 16, 32, 0.085)');
+      auraGrad.addColorStop(0.42, 'rgba(24, 14, 28, 0.035)');
+      auraGrad.addColorStop(0.68, 'rgba(18, 10, 18, 0.012)');
+      auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
       ctx.fillStyle = auraGrad;
       ctx.fillRect(0, 0, gw, gh);
 
-      // Subtle Fullscreen Vignette Depth
-      const vigGrad = ctx.createRadialGradient(gw * 0.5, gh * 0.5, gh * 0.25, gw * 0.5, gh * 0.5, gw * 0.9);
+      // Fullscreen Radial Vignette Depth (exact from artifact)
+      const vigGrad = ctx.createRadialGradient(gw * 0.5, gh * 0.5, gh * 0.38, gw * 0.5, gh * 0.5, gw * 0.98);
       vigGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      vigGrad.addColorStop(1, 'rgba(0, 0, 0, 0.55)');
+      vigGrad.addColorStop(0.72, 'rgba(0, 0, 0, 0.14)');
+      vigGrad.addColorStop(1, 'rgba(0, 0, 0, 0.38)');
       ctx.fillStyle = vigGrad;
       ctx.fillRect(0, 0, gw, gh);
 
-      // 2. TOP PAPER MASK REVEAL (#0D0D2E UNIFORM TOP CANVAS FROM NEW ARTIFACT)
+      // 2. TOP PAPER MASK REVEAL (#0D0D2E UNIFORM TOP CANVAS FROM ARTIFACT)
       const pointsCount = noisePointsRef.current.length ? noisePointsRef.current.length - 1 : 30;
       const topY = gh * 0.2;
       const botY = gh * 0.8;
@@ -213,7 +225,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       clipPath.closePath();
       ctx.clip(clipPath);
 
-      // Deep Navy Top Paper Canvas Fill (#0D0D2E from new artifact)
+      // Deep Navy Top Paper Canvas Fill (#0D0D2E from artifact)
       ctx.fillStyle = '#0d0d2e';
       ctx.fillRect(0, 0, gw, gh);
 
@@ -231,17 +243,9 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       }
       ctx.restore();
 
-      // Top Edge Soft Feathering to eliminate any horizontal seam line
-      const topFeatherHeight = 160 * dpr;
-      const featherGrad = ctx.createLinearGradient(0, 0, 0, topFeatherHeight);
-      featherGrad.addColorStop(0, 'rgba(13, 13, 46, 1.0)');
-      featherGrad.addColorStop(1, 'rgba(13, 13, 46, 0.0)');
-      ctx.fillStyle = featherGrad;
-      ctx.fillRect(0, 0, gw, topFeatherHeight);
-
       ctx.restore();
 
-      // 3. RIPPED PAPER FIBER EDGES & 3D DEPTH SHADOWS (EXACT STYLING FROM NEW ARTIFACT)
+      // 3. RIPPED PAPER FIBER EDGES & 3D DEPTH SHADOWS (EXACT STYLING FROM ARTIFACT)
       if (t > 0.001 && pathPoints.length > 1) {
         const tearLine = new Path2D();
         tearLine.moveTo(pathPoints[0].x, pathPoints[0].y);
@@ -249,7 +253,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
           tearLine.lineTo(pathPoints[i].x, pathPoints[i].y);
         }
 
-        // Heavy Cast Drop Shadow (from new artifact)
+        // Heavy Cast Drop Shadow (from artifact)
         ctx.save();
         ctx.shadowColor = 'rgba(0, 0, 0, 0.9)';
         ctx.shadowBlur = 26 * dpr;
@@ -271,7 +275,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         ctx.stroke(tearLine);
         ctx.restore();
 
-        // Cream Fibrous Paper Edge Highlight (#E8E0D5 from new artifact)
+        // Cream Fibrous Paper Edge Highlight (#E8E0D5 from artifact)
         ctx.save();
         ctx.strokeStyle = '#e8e0d5';
         ctx.lineWidth = 3 * dpr;
@@ -287,7 +291,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         ctx.stroke(tearLine);
         ctx.restore();
 
-        // Micro Fibers Extending Along Edge (from new artifact)
+        // Micro Fibers Extending Along Edge (from artifact)
         ctx.save();
         ctx.strokeStyle = 'rgba(232, 224, 213, 0.65)';
         ctx.lineWidth = 0.8 * dpr;
@@ -358,7 +362,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   return (
     <div
       ref={containerRef}
-      className={`relative w-full ${isStatementScreen ? 'min-h-[420vh]' : 'h-[100dvh] overflow-hidden'} bg-[#0d0d2e] select-none touch-pan-y`}
+      className={`relative w-full ${isStatementScreen ? 'min-h-[400vh]' : 'h-[100dvh] overflow-hidden'} bg-[#0a080c] select-none touch-pan-y`}
     >
       {/* EXPANDING CENTRAL CIRCULAR AURA DOT */}
       <motion.div
@@ -502,11 +506,11 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 3: HERO POLAROID PORTRAIT DIAGONAL ENTRANCE SECTION (RESTS 100% FULL IN VIEWPORT FIRST & BLENDS SEAMLESSLY INTO #0D0D2E) */}
+      {/* PHASE 3: HERO POLAROID PORTRAIT DIAGONAL ENTRANCE SECTION */}
       {isStatementScreen && (
         <section
           ref={portraitSectionRef}
-          className="relative z-20 w-full min-h-[140vh] px-6 sm:px-14 md:px-24 py-20 flex items-center justify-center overflow-hidden bg-gradient-to-b from-transparent via-[#1E1B4B]/40 to-[#0d0d2e]"
+          className="relative z-20 w-full min-h-[110vh] px-6 sm:px-14 md:px-24 py-12 flex items-center justify-center overflow-hidden bg-gradient-to-b from-transparent via-[#1E1B4B]/40 to-[#0d0d2e]"
         >
           <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-12 lg:gap-16 items-center relative z-10 sticky top-[15vh]">
             {/* Left Column: Heading & Branding */}
@@ -537,15 +541,15 @@ export const ScrollPaperTearOverlay: React.FC = () => {
               {/* Action Button */}
               <div className="pt-2 flex justify-center lg:justify-start">
                 <a
-                  href="#connect"
+                  href="#brands"
                   className="btn-gradient relative inline-flex items-center justify-center whitespace-nowrap rounded-full px-8 py-3.5 sm:px-10 sm:py-4 text-xs sm:text-sm font-bold uppercase tracking-widest text-white transition-all duration-300 hover:scale-[1.04] shadow-[0_4px_30px_rgba(233,30,140,0.5)]"
                 >
-                  Connect With Me &rarr;
+                  Explore Brands & Impact &rarr;
                 </a>
               </div>
             </motion.div>
 
-            {/* Right Column: Hero Polaroid Portrait Frame (Glides diagonally from bottom-left corner to upper-right) */}
+            {/* Right Column: Hero Polaroid Portrait Frame */}
             <div className="order-1 lg:order-2 flex flex-col items-center lg:items-end justify-center py-4">
               <motion.div
                 style={{
@@ -618,18 +622,25 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (REVEALING KAMNA-PORTFOLIO MATTE BLACK #0A0A0A + NEON MAGENTA AURA) */}
+      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION FROM NEW ARTIFACT */}
       {isStatementScreen && (
-        <section
-          ref={tearSectionRef}
-          className="relative z-20 w-full min-h-[250vh] overflow-hidden"
-        >
-          <div className="sticky top-0 left-0 w-full h-[100dvh] h-screen overflow-hidden bg-transparent">
-            <div ref={canvasContainerRef} className="relative w-full h-full">
-              <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block pointer-events-none" />
+        <>
+          <section
+            ref={tearSectionRef}
+            className="relative z-20 w-full min-h-[160vh] overflow-hidden"
+          >
+            <div className="sticky top-0 left-0 w-full h-[100dvh] h-screen overflow-hidden bg-transparent">
+              <div ref={canvasContainerRef} className="relative w-full h-full">
+                <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block pointer-events-none" />
+              </div>
             </div>
+          </section>
+
+          {/* BRANDS & IMPACT SECTION SHIFTED UP TO TOUCH THE UPPER HORIZONTAL LINE EXACTLY */}
+          <div className="relative z-30 -mt-[60vh] bg-[#0a080c] text-white">
+            <BrandCollaborationsSection />
           </div>
-        </section>
+        </>
       )}
     </div>
   );
