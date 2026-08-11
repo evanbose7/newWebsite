@@ -103,7 +103,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       onClick={handleTap}
       className="relative w-full h-[100dvh] h-screen bg-black overflow-hidden flex items-center justify-center cursor-pointer select-none touch-pan-y"
     >
-      {/* SEAMLESS ROYAL AURA EXPANSION (EXPANDS ON FINAL TAP) */}
+      {/* SEAMLESS SLOW & SMOOTH CINEMATIC ROYAL AURA EXPANSION (1.8s DURATION) */}
       <motion.div
         initial={{ scale: 0, opacity: 0 }}
         animate={{
@@ -111,8 +111,8 @@ export const ScrollPaperTearOverlay: React.FC = () => {
           opacity: isFinalScreen ? 1 : 0,
         }}
         transition={{
-          duration: 0.95,
-          ease: [0.16, 1, 0.3, 1],
+          duration: 1.8,
+          ease: [0.22, 1, 0.36, 1],
         }}
         className="absolute w-[500px] h-[500px] sm:w-[600px] sm:h-[600px] rounded-full pointer-events-none z-0 bg-[radial-gradient(circle,_#EC4899_0%,_#8B5CF6_25%,_#3B82F6_50%,_#1E1B4B_75%,_#0B0F19_100%)] transform-gpu will-change-transform"
       />
@@ -121,7 +121,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: isFinalScreen ? 1 : 0 }}
-        transition={{ duration: 0.95, ease: 'easeInOut' }}
+        transition={{ duration: 1.8, ease: 'easeInOut' }}
         className="absolute inset-0 w-full h-full pointer-events-none z-0 bg-gradient-to-b from-[#0F172A]/60 via-[#1E1B4B]/80 to-[#0B0F19] transform-gpu"
       />
 
@@ -130,8 +130,8 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         <motion.div
           key="question-screen"
           initial={{ opacity: 1 }}
-          exit={{ opacity: 0, scale: 1.05 }}
-          transition={{ duration: 0.4 }}
+          exit={{ opacity: 0, scale: 1.04 }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="relative z-20 w-full max-w-5xl mx-auto text-center flex items-center justify-center p-5 sm:p-6"
         >
           <h1 className="text-3xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-center leading-tight flex flex-wrap items-center justify-center gap-x-3 sm:gap-x-5 gap-y-2 select-none font-editorial">
@@ -179,9 +179,9 @@ export const ScrollPaperTearOverlay: React.FC = () => {
       {/* FINAL STATEMENT SCREEN (PHASE 2 - ENTERED ON TAP AFTER "DON'T JUST SKIM PAST THIS QUESTION.") */}
       {isFinalScreen && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.95, y: 20 }}
+          initial={{ opacity: 0, scale: 0.95, y: 25 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 1.4, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="absolute inset-0 z-20 flex items-center justify-center p-5 sm:p-12 pointer-events-none transform-gpu"
         >
           {/* CONTINUOUS SILKY FLOATING CONTAINER (60 FPS) */}
@@ -190,7 +190,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
               y: [-6, 6, -6],
             }}
             transition={{
-              duration: 4.5,
+              duration: 4.8,
               repeat: Infinity,
               ease: 'easeInOut',
             }}
@@ -205,7 +205,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
             </div>
 
             {/* 100% Solid Pure White & Neon Glowing Statement Typography */}
-            <h2 className="font-playfair text-2xl sm:text-6xl md:text-7xl font-black text-white leading-[1.28] sm:leading-[1.2] tracking-tight drop-shadow-[0_0_25px_rgba(255,255,255,0.9)]">
+            <h2 className="font-playfair text-2xl sm:text-6xl md:text-7xl font-black text-[#FFFFFF] leading-[1.28] sm:leading-[1.2] tracking-tight drop-shadow-[0_0_25px_rgba(255,255,255,0.9)]">
               &ldquo;do you know tht{' '}
               <span className="text-[#FFD600] font-black drop-shadow-[0_0_25px_rgba(255,214,0,1)]">
                 50% people
