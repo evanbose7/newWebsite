@@ -37,6 +37,7 @@ const SEQUENCE_WORDS: WordItem[][] = [
 ];
 
 export const MobilePaperTearOverlay: React.FC = () => {
+  const portraitSectionRef = useRef<HTMLDivElement>(null);
   const tearSectionRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -49,6 +50,8 @@ export const MobilePaperTearOverlay: React.FC = () => {
   const tearAnimationRef = useRef<number>(0);
   const phonePointsRef = useRef<number[]>([]);
   const pulseRef = useRef<number>(0);
+  const touchStartYRef = useRef<number>(0);
+  const isAutoScrollingRef = useRef<boolean>(false);
 
   // Seed phone procedural curve points (108 points from mobile artifact)
   useEffect(() => {
@@ -90,6 +93,26 @@ export const MobilePaperTearOverlay: React.FC = () => {
       document.documentElement.style.overflow = 'auto';
     };
   }, [isStatementScreen]);
+
+  // Handle Touch Gesture for 1-Scroll Navigation from Phase 2 -> Phase 3
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartYRef.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isStatementScreen || isAutoScrollingRef.current) return;
+    const currentY = e.touches[0].clientY;
+    const deltaY = touchStartYRef.current - currentY;
+
+    // When swiping down on Phase 2, trigger 1-scroll auto-glide to center Hero Portrait!
+    if (deltaY > 12 && window.scrollY < window.innerHeight * 0.4) {
+      isAutoScrollingRef.current = true;
+      portraitSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => {
+        isAutoScrollingRef.current = false;
+      }, 900);
+    }
+  };
 
   // Track scroll progress for Paper Tear Section on Phone
   const { scrollYProgress: tearScrollProgress } = useScroll({
@@ -297,6 +320,8 @@ export const MobilePaperTearOverlay: React.FC = () => {
 
   return (
     <div
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
       onClick={!isStatementScreen ? handleTap : undefined}
       className={`relative w-full ${
         isStatementScreen
@@ -435,9 +460,12 @@ export const MobilePaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 3: HERO POLAROID PORTRAIT SECTION (ZERO SCROLL GLITCH, SILKY 60FPS FLOATING PORTRAIT) */}
+      {/* PHASE 3: HERO POLAROID PORTRAIT SECTION (1-SCROLL AUTO GLIDE TARGET) */}
       {isStatementScreen && (
-        <section className="relative z-20 w-full min-h-[100dvh] px-5 py-10 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#1E1035] via-[#1E1B4B] to-[#0d0d2e]">
+        <section
+          ref={portraitSectionRef}
+          className="relative z-20 w-full min-h-[100dvh] px-5 py-10 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#1E1035] via-[#1E1B4B] to-[#0d0d2e]"
+        >
           <div className="w-full max-w-sm flex flex-col items-center justify-center gap-6 relative z-10 transform-gpu">
             {/* Top: Floating Hero Polaroid Portrait Frame */}
             <div className="flex flex-col items-center justify-center">
