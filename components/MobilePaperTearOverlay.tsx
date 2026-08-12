@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence, useScroll, useTransform, MotionValue } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface WordItem {
   text: string;
@@ -35,80 +35,36 @@ const SEQUENCE_WORDS: WordItem[][] = [
   ],
 ];
 
-// Single replacement words sequence for scroll
+// Replacement words sequence
 const REPLACE_WORDS = ['I', 'BRIDGE', 'THE', 'GAP', 'BETWEEN', 'IDEAS', '&', 'EXECUTION.'];
 
-// Display component showing only 1 single white word at the EXACT CENTER of the pinned black background
-const SingleWordScrollDisplay: React.FC<{ wordIdxValue: MotionValue<number> }> = ({ wordIdxValue }) => {
-  const [currentIdx, setCurrentIdx] = useState(0);
-
-  useEffect(() => {
-    const unsubscribe = wordIdxValue.on('change', (latest) => {
-      const idx = Math.min(REPLACE_WORDS.length - 1, Math.max(0, Math.floor(latest)));
-      setCurrentIdx(idx);
-    });
-    const initialIdx = Math.min(REPLACE_WORDS.length - 1, Math.max(0, Math.floor(wordIdxValue.get())));
-    setCurrentIdx(initialIdx);
-    return () => unsubscribe();
-  }, [wordIdxValue]);
-
-  return (
-    <div className="sticky top-0 left-0 w-full h-[100dvh] flex items-center justify-center bg-black text-center overflow-hidden z-30 pointer-events-none">
-      <AnimatePresence mode="wait">
-        <motion.h2
-          key={currentIdx}
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 1.08 }}
-          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="font-playfair text-4xl sm:text-5xl font-black tracking-tight text-white select-none uppercase drop-shadow-md z-40"
-        >
-          {REPLACE_WORDS[currentIdx]}
-        </motion.h2>
-      </AnimatePresence>
-    </div>
-  );
-};
-
 export const MobilePaperTearOverlay: React.FC = () => {
-  const bridgeSectionRef = useRef<HTMLDivElement>(null);
-
   const [sentenceIdx, setSentenceIdx] = useState(0);
   const [visibleCount, setVisibleCount] = useState(1);
   const [isRevealing, setIsRevealing] = useState(false);
 
-  // Flow stages for phone: 'question' | 'statement' | 'portrait'
-  const [flowStage, setFlowStage] = useState<'question' | 'statement' | 'portrait'>('question');
+  // Flow stages for phone: 'question' | 'statement' | 'portrait' | 'bridge'
+  const [flowStage, setFlowStage] = useState<'question' | 'statement' | 'portrait' | 'bridge'>('question');
+
+  // Single word index for black background word sequence
+  const [wordIdx, setWordIdx] = useState(0);
 
   const revealTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const touchStartYRef = useRef<number>(0);
+  const isCooldownRef = useRef<boolean>(false);
 
-  // Unlock window scroll when reaching Hero Portrait stage
+  // Lock body scroll for 100% AT REST screen experience (Zero vertical movement)
   useEffect(() => {
-    if (flowStage === 'portrait') {
-      document.body.style.overflowY = 'auto';
-      document.body.style.touchAction = 'pan-y';
-      document.documentElement.style.overflowY = 'auto';
-    } else {
-      document.body.style.overflow = 'hidden';
-      document.body.style.touchAction = 'none';
-      document.documentElement.style.overflow = 'hidden';
-    }
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+    document.documentElement.style.overflow = 'hidden';
 
     return () => {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = 'unset';
       document.body.style.touchAction = 'auto';
-      document.documentElement.style.overflow = 'auto';
+      document.documentElement.style.overflow = 'unset';
     };
   }, [flowStage]);
-
-  // Track scroll progress for pinned black section
-  const { scrollYProgress: bridgeScrollProgress } = useScroll({
-    target: bridgeSectionRef,
-    offset: ['start start', 'end end'],
-  });
-
-  // Map scroll progress (0.05 -> 0.95) to active word index (0 -> 7)
-  const wordIdxValue = useTransform(bridgeScrollProgress, [0.05, 0.95], [0, REPLACE_WORDS.length - 0.01]);
 
   const currentWords = sentenceIdx < SEQUENCE_WORDS.length ? SEQUENCE_WORDS[sentenceIdx] : SEQUENCE_WORDS[SEQUENCE_WORDS.length - 1];
 
@@ -154,21 +110,59 @@ export const MobilePaperTearOverlay: React.FC = () => {
     }
   };
 
+  // Touch gesture handler for stationary black background word sequence
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartYRef.current = e.touches[0].clientY;
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (flowStage !== 'bridge' || isCooldownRef.current) return;
+    const currentY = e.touches[0].clientY;
+    const deltaY = touchStartYRef.current - currentY;
+
+    if (Math.abs(deltaY) > 20) {
+      isCooldownRef.current = true;
+      if (deltaY > 0) {
+        // Swiped down -> next word
+        setWordIdx((prev) => Math.min(REPLACE_WORDS.length - 1, prev + 1));
+      } else {
+        // Swiped up -> previous word
+        setWordIdx((prev) => Math.max(0, prev - 1));
+      }
+      touchStartYRef.current = currentY;
+      setTimeout(() => {
+        isCooldownRef.current = false;
+      }, 250);
+    }
+  };
+
+  const handleWheel = (e: React.WheelEvent) => {
+    if (flowStage !== 'bridge' || isCooldownRef.current) return;
+    isCooldownRef.current = true;
+    if (e.deltaY > 0) {
+      setWordIdx((prev) => Math.min(REPLACE_WORDS.length - 1, prev + 1));
+    } else {
+      setWordIdx((prev) => Math.max(0, prev - 1));
+    }
+    setTimeout(() => {
+      isCooldownRef.current = false;
+    }, 250);
+  };
+
   return (
     <div
-      onClick={flowStage !== 'portrait' ? handleTap : undefined}
-      className={`relative w-full ${
-        flowStage === 'portrait'
-          ? 'min-h-[500vh] bg-[#000000] touch-pan-y'
-          : 'h-[100dvh] overflow-hidden bg-[#0a080c] touch-none'
-      } select-none flex flex-col items-center justify-start cursor-pointer`}
+      onTouchStart={flowStage === 'bridge' ? handleTouchStart : undefined}
+      onTouchMove={flowStage === 'bridge' ? handleTouchMove : undefined}
+      onWheel={flowStage === 'bridge' ? handleWheel : undefined}
+      onClick={flowStage === 'question' || flowStage === 'statement' ? handleTap : undefined}
+      className="relative w-full h-[100dvh] overflow-hidden bg-[#0a080c] select-none touch-none flex flex-col items-center justify-start cursor-pointer"
     >
       {/* HARDWARE ACCELERATED 60FPS EXPANDING INDIGO & BLUE AURA DOT FOR PHONE */}
       <motion.div
         initial={{ scale: 0, opacity: 0 }}
         animate={{
-          scale: flowStage !== 'question' ? 3.0 : 0,
-          opacity: flowStage !== 'question' ? 1 : 0,
+          scale: flowStage !== 'question' && flowStage !== 'bridge' ? 3.0 : 0,
+          opacity: flowStage !== 'question' && flowStage !== 'bridge' ? 1 : 0,
         }}
         transition={{
           duration: 2.2,
@@ -181,7 +175,7 @@ export const MobilePaperTearOverlay: React.FC = () => {
       {/* Dynamic Ambient Indigo & Violet Depth Layer */}
       <motion.div
         initial={{ opacity: 0 }}
-        animate={{ opacity: flowStage !== 'question' ? 1 : 0 }}
+        animate={{ opacity: flowStage !== 'question' && flowStage !== 'bridge' ? 1 : 0 }}
         transition={{ duration: 2.2, ease: 'easeInOut' }}
         style={{ willChange: 'opacity' }}
         className="fixed inset-0 w-full h-full pointer-events-none z-0 bg-gradient-to-b from-[#1E1035] via-[#1E1B4B] to-[#0d0d2e] transform-gpu"
@@ -302,16 +296,16 @@ export const MobilePaperTearOverlay: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* STAGE 3: HERO POLAROID PORTRAIT + PINNED SOLID BLACK WORD REPLACEMENT */}
-      {flowStage === 'portrait' && (
-        <>
-          {/* HERO POLAROID PORTRAIT CARD */}
+      {/* STAGE 3: HERO POLAROID PORTRAIT */}
+      <AnimatePresence mode="wait">
+        {flowStage === 'portrait' && (
           <motion.section
             key="portrait-screen"
             initial={{ opacity: 0, scale: 0.92, y: 25 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 1.05 }}
             transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
-            className="relative z-20 w-full min-h-[100dvh] px-5 py-8 flex flex-col items-center justify-center overflow-hidden bg-transparent"
+            className="relative z-20 w-full h-[100dvh] px-5 py-8 flex flex-col items-center justify-center overflow-hidden bg-transparent"
           >
             <div className="w-full max-w-sm flex flex-col items-center justify-center gap-6 relative z-10 transform-gpu">
               {/* Top: Floating Hero Polaroid Portrait Frame */}
@@ -432,35 +426,61 @@ export const MobilePaperTearOverlay: React.FC = () => {
               </div>
             </div>
 
-            {/* SCROLL DOWN CUE */}
+            {/* ACTION BUTTON TO ENTER STATIONARY BLACK BACKGROUND WORD SEQUENCE */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 1.2 }}
-              className="absolute bottom-4 left-0 right-0 text-center pointer-events-none flex flex-col items-center justify-center gap-1 z-30"
+              className="absolute bottom-6 left-0 right-0 text-center pointer-events-auto flex flex-col items-center justify-center gap-1 z-30"
             >
-              <span className="font-mono-meta text-[10px] text-pink-300 uppercase tracking-[0.3em] font-bold drop-shadow">
-                SCROLL DOWN
-              </span>
-              <motion.div
-                animate={{ y: [0, 6, 0] }}
-                transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-                className="text-pink-400 text-lg font-light drop-shadow-md"
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setWordIdx(0);
+                  setFlowStage('bridge');
+                }}
+                className="btn-gradient relative inline-flex items-center justify-center whitespace-nowrap rounded-full px-6 py-3 text-[11px] font-bold uppercase tracking-widest text-white shadow-[0_4px_25px_rgba(233,30,140,0.6)] animate-pulse"
               >
-                ↓
-              </motion.div>
+                SWIPE OR TAP TO START →
+              </button>
             </motion.div>
           </motion.section>
+        )}
+      </AnimatePresence>
 
-          {/* PINNED SOLID BLACK SECTION: SINGLE-WORD SCROLL REPLACEMENT AT EXACT CENTER OF BLACK BACKGROUND */}
-          <section
-            ref={bridgeSectionRef}
-            className="relative z-30 w-full h-[500vh] bg-black border-t border-white/10"
+      {/* STAGE 4: STATIONARY 100% AT REST BLACK BACKGROUND WITH CENTERED SINGLE WORD SWAP */}
+      <AnimatePresence mode="wait">
+        {flowStage === 'bridge' && (
+          <motion.section
+            key="bridge-screen"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6, ease: 'easeInOut' }}
+            className="fixed inset-0 w-full h-[100dvh] bg-black z-50 flex items-center justify-center p-6 text-center select-none overflow-hidden"
           >
-            <SingleWordScrollDisplay wordIdxValue={wordIdxValue} />
-          </section>
-        </>
-      )}
+            <AnimatePresence mode="wait">
+              <motion.h2
+                key={`word-${wordIdx}`}
+                initial={{ opacity: 0, scale: 0.88, y: 8 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 1.08, y: -8 }}
+                transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                className="font-playfair text-4xl sm:text-5xl font-black tracking-tight text-white select-none uppercase drop-shadow-md pointer-events-none"
+              >
+                {REPLACE_WORDS[wordIdx]}
+              </motion.h2>
+            </AnimatePresence>
+
+            {/* Micro instruction prompt at bottom */}
+            <div className="absolute bottom-6 left-0 right-0 text-center pointer-events-none z-50">
+              <span className="font-mono-meta text-[10px] text-white/40 uppercase tracking-[0.3em] font-bold">
+                SWIPE DOWN / UP TO CHANGE WORD ({wordIdx + 1}/{REPLACE_WORDS.length})
+              </span>
+            </div>
+          </motion.section>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
