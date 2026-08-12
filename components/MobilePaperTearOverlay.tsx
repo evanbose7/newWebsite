@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { BrandCollaborationsSection } from './BrandCollaborationsSection';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion';
 
 interface WordItem {
   text: string;
@@ -37,285 +36,31 @@ const SEQUENCE_WORDS: WordItem[][] = [
 ];
 
 export const MobilePaperTearOverlay: React.FC = () => {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const portraitSectionRef = useRef<HTMLDivElement>(null);
-  const tearSectionRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
   const [sentenceIdx, setSentenceIdx] = useState(0);
   const [visibleCount, setVisibleCount] = useState(1);
   const [isRevealing, setIsRevealing] = useState(false);
-  const [isStatementScreen, setIsStatementScreen] = useState(false);
 
   const revealTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const tearAnimationRef = useRef<number>(0);
-  const phonePointsRef = useRef<number[]>([]);
-  const pulseRef = useRef<number>(0);
 
-  // Seed phone procedural curve points (108 points from mobile artifact)
+  // Lock body scroll on phone for clean tap interaction
   useEffect(() => {
-    const pPoints: number[] = [];
-    let pSeed = 98765;
-    const pRnd = () => {
-      pSeed = (pSeed * 1664525 + 1013904223) % 4294967296;
-      return pSeed / 4294967296;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = 'unset';
+      document.documentElement.style.overflow = 'unset';
     };
-    for (let i = 0; i <= 108; i++) {
-      const base = pRnd() * 2 - 1;
-      const wave1 = Math.sin(i * 0.27) * 0.6 + Math.cos(i * 0.19) * 0.4;
-      const wave2 = Math.sin(i * 1.9) * 0.55 + Math.sin(i * 2.7) * 0.35;
-      const noise = (pRnd() - 0.5) * 0.9 + Math.sin(i * 7.3) * 0.22 + Math.sin(i * 13.1) * 0.12;
-      pPoints.push(base * 0.35 + wave1 * 0.22 + wave2 * 0.35 + noise * 0.32);
-    }
-    phonePointsRef.current = pPoints;
   }, []);
 
-  const currentWords = sentenceIdx < SEQUENCE_WORDS.length ? SEQUENCE_WORDS[sentenceIdx] : [];
-
-  // Lock body scroll during word reveal phase; unlock when statement screen is active
-  useEffect(() => {
-    if (isStatementScreen) {
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
-    } else {
-      document.body.style.overflow = 'hidden';
-      document.documentElement.style.overflow = 'hidden';
-    }
-
-    return () => {
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
-    };
-  }, [isStatementScreen]);
-
-  // Track scroll progress for Paper Tear Section on Phone
-  const { scrollYProgress: tearScrollProgress } = useScroll({
-    target: tearSectionRef,
-    offset: ['start 85%', 'end 15%'],
-  });
-
-  // Mobile paper tear scroll transform
-  const tearProgress = useTransform(tearScrollProgress, [0.0, 0.75], [0, 1]);
-
-  // Cubic Easing Function for Natural Physical Paper Resistance
-  const cubicEase = (v: number) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
-
-  // 60 FPS Mobile Phone Canvas Renderer (Exact Phone Artifact Algorithm)
-  const renderCanvas = useCallback(
-    (timestamp: number) => {
-      const canvas = canvasRef.current;
-      if (!canvas) {
-        tearAnimationRef.current = requestAnimationFrame(renderCanvas);
-        return;
-      }
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        tearAnimationRef.current = requestAnimationFrame(renderCanvas);
-        return;
-      }
-
-      const dpr = Math.max(1, Math.min(2.5, window.devicePixelRatio || 1));
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const gw = Math.floor(w * dpr);
-      const gh = Math.floor(h * dpr);
-
-      if (canvas.width !== gw || canvas.height !== gh) {
-        canvas.width = gw;
-        canvas.height = gh;
-      }
-      if (canvas.style.width !== w + 'px' || canvas.style.height !== h + 'px') {
-        canvas.style.width = w + 'px';
-        canvas.style.height = h + 'px';
-      }
-
-      const rawT = tearProgress.get();
-      const t = cubicEase(Math.max(0, Math.min(1, rawT)));
-
-      pulseRef.current = timestamp * 0.0011;
-      const pulse = pulseRef.current;
-
-      ctx.clearRect(0, 0, gw, gh);
-
-      // 1. REVEALED BACKGROUND UNDER TEAR LINE: PHONE ARTIFACT #0a080c + PLUM RADIAL GRADIENTS
-      ctx.fillStyle = '#0a080c';
-      ctx.fillRect(0, 0, gw, gh);
-
-      // Multi-Stage Base Radial Gradient (Phone exact)
-      const baseGrad = ctx.createRadialGradient(gw * 0.5, gh * 0.62, 0, gw * 0.5, gh * 0.62, gw * 1.1);
-      baseGrad.addColorStop(0, '#120c14');
-      baseGrad.addColorStop(0.3, '#0e0a10');
-      baseGrad.addColorStop(0.58, '#0a080c');
-      baseGrad.addColorStop(0.85, '#07050a');
-      baseGrad.addColorStop(1, '#050508');
-      ctx.fillStyle = baseGrad;
-      ctx.fillRect(0, 0, gw, gh);
-
-      // Pulsing Plum/Dark Violet Radial Glow (Phone exact)
-      const cx = gw * 0.5;
-      const cy = gh * 0.72;
-      const auraRadius = gw * 0.95;
-      const pulseMult = 1 + Math.sin(pulse * 0.65) * 0.022;
-      const auraGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, auraRadius * pulseMult);
-      auraGrad.addColorStop(0, 'rgba(36, 20, 44, 0.18)');
-      auraGrad.addColorStop(0.24, 'rgba(28, 16, 32, 0.095)');
-      auraGrad.addColorStop(0.46, 'rgba(24, 14, 28, 0.04)');
-      auraGrad.addColorStop(0.72, 'rgba(18, 10, 18, 0.015)');
-      auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = auraGrad;
-      ctx.fillRect(0, 0, gw, gh);
-
-      // Fullscreen Radial Vignette Depth
-      const vigGrad = ctx.createRadialGradient(gw * 0.5, gh * 0.5, gh * 0.35, gw * 0.5, gh * 0.5, gw * 1.05);
-      vigGrad.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      vigGrad.addColorStop(0.68, 'rgba(0, 0, 0, 0.12)');
-      vigGrad.addColorStop(1, 'rgba(0, 0, 0, 0.42)');
-      ctx.fillStyle = vigGrad;
-      ctx.fillRect(0, 0, gw, gh);
-
-      // 2. TOP PAPER MASK REVEAL (PHONE ARTIFACT #0D0D2E TOP CANVAS)
-      const pointsSource = phonePointsRef.current;
-      const pointsCount = pointsSource.length ? pointsSource.length - 1 : 108;
-      const topY = gh * 0.35;
-      const botY = gh * 0.55;
-      const cutX = t * gw;
-      const pathPoints: { x: number; y: number }[] = [];
-
-      for (let i = 0; i <= pointsCount; i++) {
-        const ratio = i / pointsCount;
-        const px = ratio * gw;
-        if (px > cutX + 0.5) break;
-        const py = topY + (botY - topY) * ratio;
-        const noiseVal = (pointsSource[i] ?? 0) * (16 * dpr);
-        pathPoints.push({ x: px, y: py + noiseVal });
-      }
-
-      if (pathPoints.length === 0) pathPoints.push({ x: 0, y: topY });
-
-      ctx.save();
-      const clipPath = new Path2D();
-      clipPath.moveTo(0, 0);
-      clipPath.lineTo(gw, 0);
-      clipPath.lineTo(gw, gh);
-
-      if (t < 0.999) {
-        clipPath.lineTo(cutX, gh);
-      } else {
-        clipPath.lineTo(gw, botY);
-      }
-
-      for (let i = pathPoints.length - 1; i >= 0; i--) {
-        clipPath.lineTo(pathPoints[i].x, pathPoints[i].y);
-      }
-      clipPath.lineTo(0, 0);
-      clipPath.closePath();
-      ctx.clip(clipPath);
-
-      // Deep Navy Top Paper Canvas Fill (#0D0D2E)
-      ctx.fillStyle = '#0d0d2e';
-      ctx.fillRect(0, 0, gw, gh);
-
-      // Film Grain Overlay on Top Paper Layer
-      ctx.save();
-      ctx.globalAlpha = 0.03;
-      ctx.globalCompositeOperation = 'overlay';
-      const grainCount = Math.floor((gw * gh) / (32400 * dpr * dpr));
-      for (let i = 0; i < Math.min(grainCount, 180); i++) {
-        const gx = ((Math.sin(i * 12.9898) * 43758.5453) % 1) * gw;
-        const gy = ((Math.cos(i * 78.233) * 12345.6789) % 1) * gh;
-        const size = (0.6 + (i % 3) * 0.4) * dpr;
-        ctx.fillStyle = i % 2 ? '#ffffff' : '#000000';
-        ctx.fillRect(gx, gy, size, size);
-      }
-      ctx.restore();
-
-      ctx.restore();
-
-      // 3. PHONE RIPPED PAPER FIBER EDGES & 3D DEPTH SHADOWS
-      if (t > 0.001 && pathPoints.length > 1) {
-        const tearLine = new Path2D();
-        tearLine.moveTo(pathPoints[0].x, pathPoints[0].y);
-        for (let i = 1; i < pathPoints.length; i++) {
-          tearLine.lineTo(pathPoints[i].x, pathPoints[i].y);
-        }
-
-        // Heavy Cast Drop Shadow
-        ctx.save();
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.52)';
-        ctx.shadowBlur = 24 * dpr;
-        ctx.shadowOffsetY = 18 * dpr;
-        ctx.shadowOffsetX = 8 * dpr;
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.48)';
-        ctx.lineWidth = 26 * dpr;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.stroke(tearLine);
-        ctx.restore();
-
-        // Inner Shadow Edge
-        ctx.save();
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
-        ctx.lineWidth = 10 * dpr;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.stroke(tearLine);
-        ctx.restore();
-
-        // Cream Fibrous Paper Edge Highlight (#E8E0D5)
-        ctx.save();
-        ctx.strokeStyle = '#e8e0d5';
-        ctx.lineWidth = 11.2 * dpr;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.stroke(tearLine);
-        ctx.restore();
-
-        // Crisp White Fiber Outline
-        ctx.save();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-        ctx.lineWidth = 2.6 * dpr;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.stroke(tearLine);
-        ctx.restore();
-
-        // Micro Fibers Extending Along Edge
-        ctx.save();
-        ctx.strokeStyle = 'rgba(232, 224, 213, 0.65)';
-        ctx.lineWidth = 0.8 * dpr;
-        for (let i = 1; i < pathPoints.length - 1; i += 3) {
-          if (Math.random() > 0.6) continue;
-          const pt = pathPoints[i];
-          const angle =
-            Math.atan2(pathPoints[i + 1].y - pathPoints[i - 1].y, pathPoints[i + 1].x - pathPoints[i - 1].x) +
-            Math.PI / 2;
-          const len = (2 + Math.random() * 5) * dpr;
-          const dir = Math.random() > 0.5 ? 1 : -0.5;
-          ctx.beginPath();
-          ctx.moveTo(pt.x, pt.y);
-          ctx.lineTo(pt.x + Math.cos(angle) * len * dir, pt.y + Math.sin(angle) * len * dir);
-          ctx.stroke();
-        }
-        ctx.restore();
-      }
-
-      tearAnimationRef.current = requestAnimationFrame(renderCanvas);
-    },
-    [tearProgress]
-  );
-
-  useEffect(() => {
-    tearAnimationRef.current = requestAnimationFrame(renderCanvas);
-    return () => {
-      cancelAnimationFrame(tearAnimationRef.current);
-    };
-  }, [renderCanvas]);
+  const currentWords = sentenceIdx < SEQUENCE_WORDS.length ? SEQUENCE_WORDS[sentenceIdx] : SEQUENCE_WORDS[SEQUENCE_WORDS.length - 1];
+  const isFinalSentence = sentenceIdx === SEQUENCE_WORDS.length - 1;
 
   const triggerNextSentence = (nextIdx: number) => {
     if (revealTimerRef.current) clearInterval(revealTimerRef.current);
 
+    // Stop after final sentence ("Don't just skim past this question.")
     if (nextIdx >= SEQUENCE_WORDS.length) {
-      setIsStatementScreen(true);
       return;
     }
 
@@ -343,267 +88,63 @@ export const MobilePaperTearOverlay: React.FC = () => {
   };
 
   const handleTap = () => {
-    if (isRevealing || isStatementScreen) return;
+    if (isRevealing || isFinalSentence) return;
     triggerNextSentence(sentenceIdx + 1);
   };
 
   return (
     <div
-      ref={containerRef}
-      className={`relative w-full ${isStatementScreen ? 'min-h-[340vh]' : 'h-[100dvh] overflow-hidden'} bg-[#0a080c] select-none touch-pan-y`}
+      onClick={handleTap}
+      className="relative w-full h-[100dvh] overflow-hidden bg-[#0a080c] select-none touch-none flex items-center justify-center p-5 cursor-pointer"
     >
-      {/* EXPANDING CENTRAL CIRCULAR AURA DOT (CAPPED & SOFTENED ON PHONE) */}
+      {/* Dynamic Ambient Background Aura */}
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[350px] h-[350px] rounded-full pointer-events-none z-0 bg-[radial-gradient(circle_at_center,_#EC4899_0%,_#8B5CF6_30%,_#1E1B4B_75%,_#0a080c_100%)] opacity-25 blur-3xl transform-gpu" />
+
       <motion.div
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{
-          scale: isStatementScreen ? 2.2 : 0,
-          opacity: isStatementScreen ? 0.35 : 0,
-        }}
-        transition={{
-          duration: 3.4,
-          ease: [0.25, 0.1, 0.25, 1.0],
-        }}
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[450px] h-[450px] rounded-full pointer-events-none z-0 bg-[radial-gradient(circle_at_center,_#EC4899_0%,_#8B5CF6_25%,_#3B82F6_50%,_#1E1B4B_82%,_#0d0d2e_100%)] shadow-[0_0_120px_rgba(236,72,153,0.8)] transform-gpu"
-      />
+        key={`sentence-${sentenceIdx}`}
+        initial={{ opacity: 1 }}
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-20 w-full max-w-md mx-auto text-center"
+      >
+        <h1 className="text-3xl font-bold tracking-tight text-center leading-tight flex flex-wrap items-center justify-center gap-x-3 gap-y-2 select-none font-editorial">
+          {currentWords.slice(0, visibleCount).map((wordObj, i) => {
+            const isEmphasized = wordObj.isEmphasized;
 
-      {/* Dynamic Ambient Atmosphere Depth Layer */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: isStatementScreen ? 1 : 0 }}
-        transition={{ duration: 3.4, ease: 'easeInOut' }}
-        className="fixed inset-0 w-full h-full pointer-events-none z-0 bg-gradient-to-b from-[#1E1035] via-[#1E1B4B] to-[#0d0d2e] transform-gpu"
-      />
+            return (
+              <motion.span
+                key={`sentence-${sentenceIdx}-word-${i}`}
+                initial={{ opacity: 0, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{
+                  duration: 0.18,
+                  ease: [0.16, 1, 0.3, 1],
+                }}
+                className={
+                  isEmphasized
+                    ? 'font-extrabold text-[#FF3B30] tracking-wider relative inline-block uppercase drop-shadow-[0_0_15px_rgba(255,59,48,0.6)]'
+                    : 'text-white font-semibold inline-block drop-shadow-md'
+                }
+              >
+                {wordObj.text}
+              </motion.span>
+            );
+          })}
+        </h1>
+      </motion.div>
 
-      {/* QUESTION SENTENCES (PHASE 1 - CLICK/TAP TO REVEAL) */}
-      {!isStatementScreen && (
-        <div
-          onClick={handleTap}
-          className="relative z-20 w-full h-[100dvh] flex items-center justify-center p-5 cursor-pointer"
+      {/* TAP INSTRUCTION CUE (HIDDEN ON FINAL SENTENCE) */}
+      {!isFinalSentence && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: [0.35, 0.85, 0.35] }}
+          transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+          className="absolute bottom-8 left-0 right-0 text-center pointer-events-none flex flex-col items-center justify-center gap-1.5 z-30"
         >
-          <motion.div
-            key="question-screen"
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0, scale: 1.03 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="w-full max-w-md mx-auto text-center"
-          >
-            <h1 className="text-3xl font-bold tracking-tight text-center leading-tight flex flex-wrap items-center justify-center gap-x-3 gap-y-2 select-none font-editorial">
-              {currentWords.slice(0, visibleCount).map((wordObj, i) => {
-                const isEmphasized = wordObj.isEmphasized;
-
-                return (
-                  <motion.span
-                    key={`sentence-${sentenceIdx}-word-${i}`}
-                    initial={{ opacity: 0, scale: 0.97 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{
-                      duration: 0.18,
-                      ease: [0.16, 1, 0.3, 1],
-                    }}
-                    className={
-                      isEmphasized
-                        ? 'font-extrabold text-[#FF3B30] tracking-wider relative inline-block uppercase drop-shadow-[0_0_15px_rgba(255,59,48,0.6)]'
-                        : 'text-white font-semibold inline-block drop-shadow-md'
-                    }
-                  >
-                    {wordObj.text}
-                  </motion.span>
-                );
-              })}
-            </h1>
-          </motion.div>
-
-          {/* INITIAL INSTRUCTION PROMPT: "TAP ANYWHERE TO CONTINUE" */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: [0.35, 0.85, 0.35] }}
-            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute bottom-8 left-0 right-0 text-center pointer-events-none flex flex-col items-center justify-center gap-1.5 z-30"
-          >
-            <span className="font-mono-meta text-[10px] text-white/70 uppercase tracking-[0.35em] font-bold drop-shadow">
-              TAP ANYWHERE TO CONTINUE
-            </span>
-            <span className="text-white/40 text-xs font-light">👆</span>
-          </motion.div>
-        </div>
-      )}
-
-      {/* PHASE 2: STATISTICAL STATEMENT FOLD */}
-      {isStatementScreen && (
-        <section className="relative z-20 w-full min-h-[100dvh] flex items-center justify-center p-5 overflow-hidden bg-transparent">
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 25 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 1.8, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="relative z-10 max-w-md mx-auto text-center flex flex-col items-center justify-center gap-5 transform-gpu"
-          >
-            <div className="flex flex-col items-center justify-center gap-5">
-              {/* Luminous Neon Pill Badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#EC4899]/30 border-2 border-[#EC4899] shadow-[0_0_20px_rgba(236,72,153,0.8)] backdrop-blur-md">
-                <span className="w-2 h-2 rounded-full bg-[#FFD600] animate-ping" />
-                <span className="font-dmsans text-[10px] uppercase tracking-[0.3em] font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.9)]">
-                  STATISTICAL OBSERVATION
-                </span>
-              </div>
-
-              {/* 100% Solid Pure White & Neon Glowing Statement Typography */}
-              <h2 className="font-playfair text-2xl font-black text-[#FFFFFF] leading-[1.28] tracking-tight drop-shadow-[0_0_25px_rgba(255,255,255,0.9)]">
-                &ldquo;do you know tht{' '}
-                <span className="text-[#FFD600] font-black drop-shadow-[0_0_25px_rgba(255,214,0,1)]">
-                  50% people
-                </span>{' '}
-                are poor is india because they dont have money above the{' '}
-                <span className="text-[#00F5FF] underline decoration-[#00F5FF] decoration-2 underline-offset-4 font-black drop-shadow-[0_0_25px_rgba(0,245,255,1)]">
-                  poverty line
-                </span>&rdquo;
-              </h2>
-
-              {/* Luminous Laser Accent Bar */}
-              <div className="w-24 h-1.5 bg-gradient-to-r from-[#FF2E93] via-[#FFD600] to-[#00F5FF] rounded-full shadow-[0_0_25px_rgba(0,245,255,1)] mt-1 animate-pulse" />
-            </div>
-          </motion.div>
-
-          {/* SCROLL DOWN CUE FOR PHASE 3 HERO PORTRAIT */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 2.2 }}
-            className="absolute bottom-8 left-0 right-0 text-center pointer-events-none flex flex-col items-center justify-center gap-2 z-30"
-          >
-            <span className="font-mono-meta text-[10px] text-pink-300 uppercase tracking-[0.3em] font-bold drop-shadow">
-              SCROLL DOWN FOR PORTRAIT
-            </span>
-            <motion.div
-              animate={{ y: [0, 6, 0] }}
-              transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-              className="text-pink-400 text-lg font-light drop-shadow-md"
-            >
-              ↓
-            </motion.div>
-          </motion.div>
-        </section>
-      )}
-
-      {/* PHASE 3: HERO POLAROID PORTRAIT SECTION (MOBILE PHONE DEDICATED) */}
-      {isStatementScreen && (
-        <section
-          ref={portraitSectionRef}
-          className="relative z-20 w-full min-h-[100dvh] px-5 py-12 flex items-center justify-center overflow-hidden bg-transparent"
-        >
-          <div className="w-full max-w-sm flex flex-col items-center justify-center gap-8 relative z-10">
-            {/* Top: Hero Polaroid Portrait Frame (Static in flow, no peeking) */}
-            <div className="flex flex-col items-center justify-center">
-              <div className="relative w-[min(76vw,270px)] my-2 cursor-pointer select-none transform-gpu rotate-2">
-                {/* Polaroid Radial Glow */}
-                <div className="pointer-events-none absolute inset-0 m-auto h-[85%] w-[85%] rounded-full blur-3xl bg-gradient-to-r from-[#FFB3CB]/40 via-[#E91E8C]/30 to-transparent" />
-
-                {/* White Polaroid Card */}
-                <div className="relative bg-white p-3 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85)] rounded-sm transform transition-all duration-500 ease-out hover:rotate-3 hover:scale-[1.03]">
-                  <div className="relative overflow-hidden aspect-[2/3] bg-[#F5F0EB]">
-                    <img
-                      src="/assets/kamna-portrait.jpg"
-                      alt="Arnav — Content Strategist"
-                      className="w-full h-full object-cover object-center select-none"
-                    />
-                  </div>
-
-                  {/* Handwritten Polaroid Caption */}
-                  <p className="text-center text-[#0A0A0A]/85 font-caveat text-lg pt-2 pb-1 tracking-wide font-semibold">
-                    @ariimakesflims
-                  </p>
-                </div>
-
-                {/* --- HANDWRITTEN POPUP STICKERS FROM KAMNA-PORTFOLIO --- */}
-
-                {/* 1. Sticker Top-Left: "21 years old" */}
-                <div className="pointer-events-none absolute -top-4 -left-3 z-30 transform -rotate-6">
-                  <div className="bg-[#FFB3CB] text-[#0A0A0A] font-caveat text-xs font-bold px-2 py-0.5 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
-                    21 years old
-                  </div>
-                </div>
-
-                {/* 2. Sticker Top-Right: "social media strategist" */}
-                <div className="pointer-events-none absolute -top-4 -right-3 z-30 transform rotate-6">
-                  <div className="bg-[#E91E8C] text-[#F5F0EB] font-caveat text-xs font-bold px-2 py-0.5 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
-                    social media strategist
-                  </div>
-                </div>
-
-                {/* 3. Sticker Middle-Left: "ghostwriter" */}
-                <div className="pointer-events-none absolute top-1/2 -left-4 transform -translate-y-1/2 -rotate-12 z-30">
-                  <div className="bg-[#FFB3CB] text-[#0A0A0A] font-caveat text-xs font-bold px-2 py-0.5 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
-                    ghostwriter
-                  </div>
-                </div>
-
-                {/* 4. Sticker Bottom-Left: "content creator" */}
-                <div className="pointer-events-none absolute -bottom-4 -left-2 z-30 transform rotate-3">
-                  <div className="bg-[#FFB3CB] text-[#0A0A0A] font-caveat text-xs font-bold px-2 py-0.5 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
-                    content creator
-                  </div>
-                </div>
-
-                {/* 5. Sticker Bottom-Right: "storyteller" */}
-                <div className="pointer-events-none absolute -bottom-4 -right-2 z-30 transform -rotate-3">
-                  <div className="bg-[#E91E8C] text-[#F5F0EB] font-caveat text-xs font-bold px-2 py-0.5 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
-                    storyteller
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Bottom: Heading & Branding */}
-            <div className="flex flex-col gap-4 text-center px-2">
-              <h1 className="font-black uppercase leading-[1.08] tracking-tight text-[#F5F0EB] text-3xl font-playfair drop-shadow-lg">
-                Hi, I&apos;m{' '}
-                <span className="bg-gradient-to-r from-[#F5F0EB] via-[#FFB3CB] to-[#E91E8C] bg-clip-text text-transparent">
-                  Arnav
-                </span>
-              </h1>
-
-              <div className="flex flex-col gap-2 max-w-xs mx-auto">
-                <p className="font-dmsans text-base text-[#F5F0EB] font-light leading-relaxed">
-                  Building my brand while teaching you to build yours{' '}
-                  <span className="text-[#E91E8C]">⭐️</span>
-                </p>
-                <p className="font-dmsans text-xs text-[#F5F0EB]/70 font-light leading-relaxed">
-                  Personal brand strategist, Content creator, Storyteller, and Ghostwriter.
-                </p>
-              </div>
-
-              {/* Action Button */}
-              <div className="pt-2 flex justify-center">
-                <a
-                  href="#brands"
-                  className="btn-gradient relative inline-flex items-center justify-center whitespace-nowrap rounded-full px-6 py-3 text-xs font-bold uppercase tracking-widest text-white transition-all duration-300 hover:scale-[1.04] shadow-[0_4px_30px_rgba(233,30,140,0.5)]"
-                >
-                  Explore Brands & Impact &rarr;
-                </a>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION FOR MOBILE PHONE */}
-      {isStatementScreen && (
-        <>
-          <section
-            ref={tearSectionRef}
-            className="relative z-20 w-full min-h-[130vh] overflow-hidden"
-          >
-            <div className="sticky top-0 left-0 w-full h-[100dvh] h-screen overflow-hidden bg-transparent">
-              <div className="relative w-full h-full">
-                <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block pointer-events-none" />
-              </div>
-            </div>
-          </section>
-
-          {/* BRANDS & IMPACT SECTION SHIFTED UP TO TOUCH THE PAPER TEAR LINE */}
-          <div className="relative z-30 -mt-[45vh] bg-[#0a080c] text-white">
-            <BrandCollaborationsSection />
-          </div>
-        </>
+          <span className="font-mono-meta text-[10px] text-white/70 uppercase tracking-[0.35em] font-bold drop-shadow">
+            TAP ANYWHERE TO CONTINUE
+          </span>
+          <span className="text-white/40 text-xs font-light">👆</span>
+        </motion.div>
       )}
     </div>
   );
