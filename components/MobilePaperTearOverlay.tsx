@@ -296,7 +296,7 @@ export const MobilePaperTearOverlay: React.FC = () => {
       onClick={!isStatementScreen ? handleTap : undefined}
       className={`relative w-full ${
         isStatementScreen
-          ? 'min-h-[320vh] bg-[#0d0d2e] touch-pan-y'
+          ? 'min-h-[320vh] bg-[#0d0d2e] snap-y snap-proximity scroll-smooth touch-pan-y'
           : 'h-[100dvh] overflow-hidden bg-[#0a080c] touch-none'
       } select-none flex flex-col items-center justify-start cursor-pointer`}
     >
@@ -375,9 +375,9 @@ export const MobilePaperTearOverlay: React.FC = () => {
         </div>
       )}
 
-      {/* PHASE 2: BRIGHT VIBRANT STATISTICAL OBSERVATION FOLD */}
+      {/* PHASE 2: BRIGHT VIBRANT STATISTICAL OBSERVATION FOLD (SNAP TARGET) */}
       {isStatementScreen && (
-        <section className="relative z-20 w-full min-h-[100dvh] flex flex-col items-center justify-center p-5 overflow-hidden bg-transparent">
+        <section className="relative z-20 w-full h-[100dvh] shrink-0 snap-start snap-always flex flex-col items-center justify-center p-5 overflow-hidden bg-transparent">
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 18 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -431,24 +431,24 @@ export const MobilePaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 3: HERO POLAROID PORTRAIT SECTION (SILKY RISE-UP + FLOATING MOTION ON PHONE) */}
+      {/* PHASE 3: HERO POLAROID PORTRAIT SECTION (SNAPS TO FIT ENTIRE PORTRAIT IN CENTER) */}
       {isStatementScreen && (
-        <section className="relative z-20 w-full min-h-[100dvh] px-5 py-12 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#1E1035] via-[#1E1B4B] to-[#0d0d2e]">
+        <section className="relative z-20 w-full h-[100dvh] shrink-0 snap-start snap-always px-5 py-6 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#1E1035] via-[#1E1B4B] to-[#0d0d2e]">
           <motion.div
-            initial={{ opacity: 0, y: 70, scale: 0.94 }}
+            initial={{ opacity: 0, y: 60, scale: 0.94 }}
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
-            viewport={{ once: false, amount: 0.25 }}
+            viewport={{ once: false, amount: 0.3 }}
             transition={{
               duration: 1.2,
               ease: [0.16, 1, 0.3, 1],
             }}
-            className="w-full max-w-sm flex flex-col items-center justify-center gap-8 relative z-10 transform-gpu will-change-transform"
+            className="w-full max-w-sm flex flex-col items-center justify-center gap-6 relative z-10 transform-gpu will-change-transform"
           >
             {/* Top: Floating Hero Polaroid Portrait Frame */}
             <div className="flex flex-col items-center justify-center">
               <motion.div
                 animate={{
-                  y: [-6, 6, -6],
+                  y: [-5, 5, -5],
                   rotate: [2, 3.5, 2],
                 }}
                 transition={{
@@ -456,13 +456,13 @@ export const MobilePaperTearOverlay: React.FC = () => {
                   repeat: Infinity,
                   ease: 'easeInOut',
                 }}
-                className="relative w-[min(76vw,270px)] my-2 cursor-pointer select-none transform-gpu will-change-transform"
+                className="relative w-[min(72vw,255px)] my-1 cursor-pointer select-none transform-gpu will-change-transform"
               >
                 {/* Polaroid Radial Glow */}
                 <div className="pointer-events-none absolute inset-0 m-auto h-[85%] w-[85%] rounded-full blur-2xl bg-gradient-to-r from-[#FFB3CB]/40 via-[#E91E8C]/30 to-transparent" />
 
                 {/* White Polaroid Card */}
-                <div className="relative bg-white p-3 shadow-2xl shadow-black/80 rounded-sm transform-gpu">
+                <div className="relative bg-white p-2.5 shadow-2xl shadow-black/80 rounded-sm transform-gpu">
                   <div className="relative overflow-hidden aspect-[2/3] bg-[#F5F0EB]">
                     <img
                       src="/assets/kamna-portrait.jpg"
@@ -472,7 +472,7 @@ export const MobilePaperTearOverlay: React.FC = () => {
                   </div>
 
                   {/* Handwritten Polaroid Caption */}
-                  <p className="text-center text-[#0A0A0A]/85 font-caveat text-lg pt-2 pb-1 tracking-wide font-semibold">
+                  <p className="text-center text-[#0A0A0A]/85 font-caveat text-base pt-1.5 pb-0.5 tracking-wide font-semibold">
                     @ariimakesflims
                   </p>
                 </div>
@@ -480,36 +480,36 @@ export const MobilePaperTearOverlay: React.FC = () => {
                 {/* --- HANDWRITTEN POPUP STICKERS FROM KAMNA-PORTFOLIO --- */}
 
                 {/* 1. Sticker Top-Left: "21 years old" */}
-                <div className="pointer-events-none absolute -top-4 -left-3 z-30 transform -rotate-6">
-                  <div className="bg-[#FFB3CB] text-[#0A0A0A] font-caveat text-xs font-bold px-2 py-0.5 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
+                <div className="pointer-events-none absolute -top-3.5 -left-3 z-30 transform -rotate-6">
+                  <div className="bg-[#FFB3CB] text-[#0A0A0A] font-caveat text-[11px] font-bold px-2 py-0.5 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
                     21 years old
                   </div>
                 </div>
 
                 {/* 2. Sticker Top-Right: "social media strategist" */}
-                <div className="pointer-events-none absolute -top-4 -right-3 z-30 transform rotate-6">
-                  <div className="bg-[#E91E8C] text-[#F5F0EB] font-caveat text-xs font-bold px-2 py-0.5 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
+                <div className="pointer-events-none absolute -top-3.5 -right-3 z-30 transform rotate-6">
+                  <div className="bg-[#E91E8C] text-[#F5F0EB] font-caveat text-[11px] font-bold px-2 py-0.5 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
                     social media strategist
                   </div>
                 </div>
 
                 {/* 3. Sticker Middle-Left: "ghostwriter" */}
                 <div className="pointer-events-none absolute top-1/2 -left-4 transform -translate-y-1/2 -rotate-12 z-30">
-                  <div className="bg-[#FFB3CB] text-[#0A0A0A] font-caveat text-xs font-bold px-2 py-0.5 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
+                  <div className="bg-[#FFB3CB] text-[#0A0A0A] font-caveat text-[11px] font-bold px-2 py-0.5 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
                     ghostwriter
                   </div>
                 </div>
 
                 {/* 4. Sticker Bottom-Left: "content creator" */}
-                <div className="pointer-events-none absolute -bottom-4 -left-2 z-30 transform rotate-3">
-                  <div className="bg-[#FFB3CB] text-[#0A0A0A] font-caveat text-xs font-bold px-2 py-0.5 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
+                <div className="pointer-events-none absolute -bottom-3.5 -left-2 z-30 transform rotate-3">
+                  <div className="bg-[#FFB3CB] text-[#0A0A0A] font-caveat text-[11px] font-bold px-2 py-0.5 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
                     content creator
                   </div>
                 </div>
 
                 {/* 5. Sticker Bottom-Right: "storyteller" */}
-                <div className="pointer-events-none absolute -bottom-4 -right-2 z-30 transform -rotate-3">
-                  <div className="bg-[#E91E8C] text-[#F5F0EB] font-caveat text-xs font-bold px-2 py-0.5 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
+                <div className="pointer-events-none absolute -bottom-3.5 -right-2 z-30 transform -rotate-3">
+                  <div className="bg-[#E91E8C] text-[#F5F0EB] font-caveat text-[11px] font-bold px-2 py-0.5 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
                     storyteller
                   </div>
                 </div>
@@ -517,29 +517,29 @@ export const MobilePaperTearOverlay: React.FC = () => {
             </div>
 
             {/* Bottom: Heading & Branding */}
-            <div className="flex flex-col gap-4 text-center px-2">
-              <h1 className="font-black uppercase leading-[1.08] tracking-tight text-[#F5F0EB] text-3xl font-playfair drop-shadow-lg">
+            <div className="flex flex-col gap-3 text-center px-2">
+              <h1 className="font-black uppercase leading-[1.08] tracking-tight text-[#F5F0EB] text-2xl font-playfair drop-shadow-lg">
                 Hi, I&apos;m{' '}
                 <span className="bg-gradient-to-r from-[#F5F0EB] via-[#FFB3CB] to-[#E91E8C] bg-clip-text text-transparent">
                   Arnav
                 </span>
               </h1>
 
-              <div className="flex flex-col gap-2 max-w-xs mx-auto">
-                <p className="font-dmsans text-base text-[#F5F0EB] font-light leading-relaxed">
+              <div className="flex flex-col gap-1.5 max-w-xs mx-auto">
+                <p className="font-dmsans text-sm text-[#F5F0EB] font-light leading-relaxed">
                   Building my brand while teaching you to build yours{' '}
                   <span className="text-[#E91E8C]">⭐️</span>
                 </p>
-                <p className="font-dmsans text-xs text-[#F5F0EB]/70 font-light leading-relaxed">
+                <p className="font-dmsans text-[11px] text-[#F5F0EB]/70 font-light leading-relaxed">
                   Personal brand strategist, Content creator, Storyteller, and Ghostwriter.
                 </p>
               </div>
 
               {/* Action Button */}
-              <div className="pt-2 flex justify-center">
+              <div className="pt-1 flex justify-center">
                 <a
                   href="#brands"
-                  className="btn-gradient relative inline-flex items-center justify-center whitespace-nowrap rounded-full px-6 py-3 text-xs font-bold uppercase tracking-widest text-white transition-all duration-300 hover:scale-[1.04] shadow-[0_4px_30px_rgba(233,30,140,0.5)]"
+                  className="btn-gradient relative inline-flex items-center justify-center whitespace-nowrap rounded-full px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-white transition-all duration-300 hover:scale-[1.04] shadow-[0_4px_30px_rgba(233,30,140,0.5)]"
                 >
                   Explore Brands & Impact &rarr;
                 </a>
@@ -549,12 +549,13 @@ export const MobilePaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION FOR MOBILE PHONE */}
+      {/* PHASE 4 & PHASE 5: CONTINUOUS SMOOTH SCROLLING (NO SNAP RULES) */}
       {isStatementScreen && (
         <>
+          {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION */}
           <section
             ref={tearSectionRef}
-            className="relative z-20 w-full min-h-[130vh] overflow-hidden"
+            className="relative z-20 w-full min-h-[140vh] overflow-hidden"
           >
             <div className="sticky top-0 left-0 w-full h-[100dvh] h-screen overflow-hidden bg-transparent">
               <div className="relative w-full h-full">
