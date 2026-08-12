@@ -38,7 +38,7 @@ const SEQUENCE_WORDS: WordItem[][] = [
 // Single replacement words sequence for scroll
 const REPLACE_WORDS = ['I', 'BRIDGE', 'THE', 'GAP', 'BETWEEN', 'IDEAS', '&', 'EXECUTION.'];
 
-// Display component showing only 1 single white word at the EXACT SAME FIXED POSITION on black background
+// Display component showing only 1 single white word at the EXACT CENTER of the pinned black background
 const SingleWordScrollDisplay: React.FC<{ wordIdxValue: MotionValue<number> }> = ({ wordIdxValue }) => {
   const [currentIdx, setCurrentIdx] = useState(0);
 
@@ -53,20 +53,18 @@ const SingleWordScrollDisplay: React.FC<{ wordIdxValue: MotionValue<number> }> =
   }, [wordIdxValue]);
 
   return (
-    <div className="sticky top-0 left-0 w-full h-[100dvh] flex items-center justify-center bg-black text-center overflow-hidden">
+    <div className="sticky top-0 left-0 w-full h-[100dvh] flex items-center justify-center bg-black text-center overflow-hidden z-30 pointer-events-none">
       <AnimatePresence mode="wait">
-        <motion.div
+        <motion.h2
           key={currentIdx}
-          initial={{ opacity: 0, scale: 0.92 }}
+          initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 1.08 }}
           transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xs text-center pointer-events-none"
+          className="font-playfair text-4xl sm:text-5xl font-black tracking-tight text-white select-none uppercase drop-shadow-md z-40"
         >
-          <h2 className="font-playfair text-4xl sm:text-5xl font-black tracking-tight text-white select-none uppercase drop-shadow-md">
-            {REPLACE_WORDS[currentIdx]}
-          </h2>
-        </motion.div>
+          {REPLACE_WORDS[currentIdx]}
+        </motion.h2>
       </AnimatePresence>
     </div>
   );
@@ -304,7 +302,7 @@ export const MobilePaperTearOverlay: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* STAGE 3: HERO POLAROID PORTRAIT + PINNED SINGLE-WORD SCROLL REPLACEMENT ON BLACK BACKGROUND */}
+      {/* STAGE 3: HERO POLAROID PORTRAIT + PINNED SOLID BLACK WORD REPLACEMENT */}
       {flowStage === 'portrait' && (
         <>
           {/* HERO POLAROID PORTRAIT CARD */}
@@ -454,7 +452,7 @@ export const MobilePaperTearOverlay: React.FC = () => {
             </motion.div>
           </motion.section>
 
-          {/* PINNED SOLID BLACK SECTION: SINGLE-WORD SCROLL REPLACEMENT AT FIXED CENTER POSITION */}
+          {/* PINNED SOLID BLACK SECTION: SINGLE-WORD SCROLL REPLACEMENT AT EXACT CENTER OF BLACK BACKGROUND */}
           <section
             ref={bridgeSectionRef}
             className="relative z-30 w-full h-[500vh] bg-black border-t border-white/10"
