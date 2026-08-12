@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 interface WordItem {
   text: string;
@@ -98,25 +98,27 @@ export const MobilePaperTearOverlay: React.FC = () => {
       onClick={handleTap}
       className="relative w-full h-[100dvh] overflow-hidden bg-[#0a080c] select-none touch-none flex items-center justify-center p-5 cursor-pointer"
     >
-      {/* EXPANDING CENTRAL CIRCULAR INDIGO & BLUE AURA DOT (SMOOTH & SLOW 3.4S TRANSITION) */}
+      {/* HARDWARE ACCELERATED 60FPS EXPANDING INDIGO & BLUE AURA DOT FOR PHONE */}
       <motion.div
         initial={{ scale: 0, opacity: 0 }}
         animate={{
-          scale: isStatementScreen ? 7.5 : 0,
+          scale: isStatementScreen ? 3.0 : 0,
           opacity: isStatementScreen ? 1 : 0,
         }}
         transition={{
-          duration: 3.4,
-          ease: [0.25, 0.1, 0.25, 1.0],
+          duration: 2.2,
+          ease: [0.16, 1, 0.3, 1],
         }}
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] rounded-full pointer-events-none z-0 bg-[radial-gradient(circle_at_center,_#EC4899_0%,_#8B5CF6_25%,_#3B82F6_50%,_#1E1B4B_82%,_#0d0d2e_100%)] shadow-[0_0_120px_rgba(236,72,153,0.8)] transform-gpu"
+        style={{ willChange: 'transform, opacity' }}
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120vw] h-[120vw] max-w-[500px] max-h-[500px] rounded-full pointer-events-none z-0 bg-[radial-gradient(circle_at_center,_#EC4899_0%,_#8B5CF6_30%,_#3B82F6_55%,_#1E1B4B_80%,_#0d0d2e_100%)] transform-gpu translate-z-0"
       />
 
       {/* Dynamic Ambient Indigo & Violet Depth Layer */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: isStatementScreen ? 1 : 0 }}
-        transition={{ duration: 3.4, ease: 'easeInOut' }}
+        transition={{ duration: 2.2, ease: 'easeInOut' }}
+        style={{ willChange: 'opacity' }}
         className="fixed inset-0 w-full h-full pointer-events-none z-0 bg-gradient-to-b from-[#1E1035] via-[#1E1B4B] to-[#0d0d2e] transform-gpu"
       />
 
@@ -175,13 +177,13 @@ export const MobilePaperTearOverlay: React.FC = () => {
       {isStatementScreen && (
         <section className="relative z-20 w-full h-[100dvh] flex items-center justify-center p-5 overflow-hidden">
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: 25 }}
+            initial={{ opacity: 0, scale: 0.96, y: 18 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 1.8, delay: 0.8, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 1.2, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
             className="relative z-10 max-w-md mx-auto text-center flex flex-col items-center justify-center gap-5 transform-gpu"
           >
             <motion.div
-              animate={{ y: [-6, 6, -6] }}
+              animate={{ y: [-5, 5, -5] }}
               transition={{ duration: 5.0, repeat: Infinity, ease: 'easeInOut' }}
               className="flex flex-col items-center justify-center gap-5"
             >
