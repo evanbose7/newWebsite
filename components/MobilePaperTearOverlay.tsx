@@ -68,33 +68,26 @@ export const MobilePaperTearOverlay: React.FC = () => {
     phonePointsRef.current = pPoints;
   }, []);
 
-  // Set native window CSS Scroll Snap on phone when statement screen is active
+  // Lock body scroll during word reveal phase; unlock smooth momentum window scrolling when statement screen is active
   useEffect(() => {
     if (isStatementScreen) {
       document.body.style.overflowY = 'auto';
       document.body.style.touchAction = 'pan-y';
-      document.body.style.scrollSnapType = 'y mandatory';
       document.body.style.scrollBehavior = 'smooth';
 
       document.documentElement.style.overflowY = 'auto';
-      document.documentElement.style.scrollSnapType = 'y mandatory';
       document.documentElement.style.scrollBehavior = 'smooth';
     } else {
       document.body.style.overflow = 'hidden';
       document.body.style.touchAction = 'none';
-      document.body.style.scrollSnapType = 'none';
 
       document.documentElement.style.overflow = 'hidden';
-      document.documentElement.style.scrollSnapType = 'none';
     }
 
     return () => {
       document.body.style.overflow = 'auto';
       document.body.style.touchAction = 'auto';
-      document.body.style.scrollSnapType = 'none';
-
       document.documentElement.style.overflow = 'auto';
-      document.documentElement.style.scrollSnapType = 'none';
     };
   }, [isStatementScreen]);
 
@@ -386,12 +379,9 @@ export const MobilePaperTearOverlay: React.FC = () => {
         </div>
       )}
 
-      {/* PHASE 2: BRIGHT VIBRANT STATISTICAL OBSERVATION FOLD (SNAP TARGET 1) */}
+      {/* PHASE 2: BRIGHT VIBRANT STATISTICAL OBSERVATION FOLD */}
       {isStatementScreen && (
-        <section
-          style={{ scrollSnapAlign: 'start', scrollSnapStop: 'always' }}
-          className="relative z-20 w-full h-[100dvh] shrink-0 flex flex-col items-center justify-center p-5 overflow-hidden bg-transparent"
-        >
+        <section className="relative z-20 w-full min-h-[100dvh] flex flex-col items-center justify-center p-5 overflow-hidden bg-transparent">
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 18 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -445,22 +435,10 @@ export const MobilePaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 3: HERO POLAROID PORTRAIT SECTION (SNAP TARGET 2 - SNAPS TO FIT ENTIRE PORTRAIT IN CENTER) */}
+      {/* PHASE 3: HERO POLAROID PORTRAIT SECTION (ZERO SCROLL GLITCH, SILKY 60FPS FLOATING PORTRAIT) */}
       {isStatementScreen && (
-        <section
-          style={{ scrollSnapAlign: 'start', scrollSnapStop: 'always' }}
-          className="relative z-20 w-full h-[100dvh] shrink-0 px-5 py-6 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#1E1035] via-[#1E1B4B] to-[#0d0d2e]"
-        >
-          <motion.div
-            initial={{ opacity: 0, y: 60, scale: 0.94 }}
-            whileInView={{ opacity: 1, y: 0, scale: 1 }}
-            viewport={{ once: false, amount: 0.3 }}
-            transition={{
-              duration: 1.2,
-              ease: [0.16, 1, 0.3, 1],
-            }}
-            className="w-full max-w-sm flex flex-col items-center justify-center gap-6 relative z-10 transform-gpu will-change-transform"
-          >
+        <section className="relative z-20 w-full min-h-[100dvh] px-5 py-10 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#1E1035] via-[#1E1B4B] to-[#0d0d2e]">
+          <div className="w-full max-w-sm flex flex-col items-center justify-center gap-6 relative z-10 transform-gpu">
             {/* Top: Floating Hero Polaroid Portrait Frame */}
             <div className="flex flex-col items-center justify-center">
               <motion.div
@@ -562,11 +540,11 @@ export const MobilePaperTearOverlay: React.FC = () => {
                 </a>
               </div>
             </div>
-          </motion.div>
+          </div>
         </section>
       )}
 
-      {/* PHASE 4 & PHASE 5: CONTINUOUS SMOOTH SCROLLING (NO SNAP RULES) */}
+      {/* PHASE 4 & PHASE 5: CONTINUOUS SMOOTH SCROLLING */}
       {isStatementScreen && (
         <>
           {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION */}
