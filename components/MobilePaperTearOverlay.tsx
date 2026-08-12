@@ -2,7 +2,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform, MotionValue } from 'framer-motion';
-import { BrandCollaborationsSection } from './BrandCollaborationsSection';
 
 interface WordItem {
   text: string;
@@ -320,7 +319,7 @@ export const MobilePaperTearOverlay: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* STAGE 3: HERO POLAROID PORTRAIT + SCROLL-DRIVEN WORD POP REVEAL SECTION */}
+      {/* STAGE 3: HERO POLAROID PORTRAIT + SCROLL-DRIVEN WORD POP REVEAL SECTION (FINAL STAGE ON PHONE) */}
       {flowStage === 'portrait' && (
         <>
           {/* HERO POLAROID PORTRAIT CARD */}
@@ -502,11 +501,6 @@ export const MobilePaperTearOverlay: React.FC = () => {
               </p>
             </div>
           </section>
-
-          {/* BRANDS & IMPACT SECTION */}
-          <div className="relative z-40 bg-[#0a080c] text-white">
-            <BrandCollaborationsSection />
-          </div>
         </>
       )}
     </div>
