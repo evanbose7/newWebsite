@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useScroll, useTransform, MotionValue } from 'framer-motion';
 import { BrandCollaborationsSection } from './BrandCollaborationsSection';
 
 interface WordItem {
@@ -36,7 +36,61 @@ const SEQUENCE_WORDS: WordItem[][] = [
   ],
 ];
 
+// Words for the scroll-driven pop reveal on black background
+interface BridgeWord {
+  text: string;
+  className: string;
+}
+
+const BRIDGE_WORDS: BridgeWord[] = [
+  { text: 'I', className: 'text-[#F5F0EB] font-bold text-3xl' },
+  { text: 'BRIDGE', className: 'text-[#00F5FF] font-black text-3xl drop-shadow-[0_0_20px_rgba(0,245,255,0.9)]' },
+  { text: 'THE', className: 'text-[#F5F0EB]/90 font-bold text-3xl' },
+  { text: 'GAP', className: 'text-[#FFB3CB] font-black text-3xl drop-shadow-[0_0_20px_rgba(255,179,203,0.9)]' },
+  { text: 'BETWEEN', className: 'text-[#F5F0EB]/90 font-bold text-3xl' },
+  { text: 'IDEAS', className: 'text-[#FFD600] font-black text-4xl drop-shadow-[0_0_25px_rgba(255,214,0,1)] tracking-tight' },
+  { text: '&', className: 'text-[#8B5CF6] font-black text-3xl' },
+  { text: 'EXECUTION.', className: 'text-[#FF3B30] font-black text-4xl drop-shadow-[0_0_25px_rgba(255,59,48,1)] tracking-tight' },
+];
+
+// Single Word Pop Item component that reacts to scroll progress
+const ScrollWordPop: React.FC<{
+  index: number;
+  wordObj: BridgeWord;
+  countProgress: MotionValue<number>;
+}> = ({ index, wordObj, countProgress }) => {
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = countProgress.on('change', (latest) => {
+      setIsVisible(latest >= index + 1);
+    });
+    setIsVisible(countProgress.get() >= index + 1);
+    return () => unsubscribe();
+  }, [countProgress, index]);
+
+  return (
+    <motion.span
+      initial={{ opacity: 0, scale: 0.4, y: 15 }}
+      animate={{
+        opacity: isVisible ? 1 : 0,
+        scale: isVisible ? 1 : 0.4,
+        y: isVisible ? 0 : 15,
+      }}
+      transition={{
+        duration: 0.35,
+        ease: [0.175, 0.885, 0.32, 1.275], // Smooth bouncy pop curve
+      }}
+      className={`inline-block mx-1.5 my-1 select-none font-playfair ${wordObj.className}`}
+    >
+      {wordObj.text}
+    </motion.span>
+  );
+};
+
 export const MobilePaperTearOverlay: React.FC = () => {
+  const bridgeSectionRef = useRef<HTMLDivElement>(null);
+
   const [sentenceIdx, setSentenceIdx] = useState(0);
   const [visibleCount, setVisibleCount] = useState(1);
   const [isRevealing, setIsRevealing] = useState(false);
@@ -64,6 +118,15 @@ export const MobilePaperTearOverlay: React.FC = () => {
       document.documentElement.style.overflow = 'auto';
     };
   }, [flowStage]);
+
+  // Track scroll progress for the "I BRIDGE THE GAP..." word pop section
+  const { scrollYProgress: bridgeScrollProgress } = useScroll({
+    target: bridgeSectionRef,
+    offset: ['start start', 'end end'],
+  });
+
+  // Map scroll progress (0.05 -> 0.85) to visible word count (1 -> 8)
+  const countProgress = useTransform(bridgeScrollProgress, [0.05, 0.85], [1, BRIDGE_WORDS.length]);
 
   const currentWords = sentenceIdx < SEQUENCE_WORDS.length ? SEQUENCE_WORDS[sentenceIdx] : SEQUENCE_WORDS[SEQUENCE_WORDS.length - 1];
 
@@ -114,7 +177,7 @@ export const MobilePaperTearOverlay: React.FC = () => {
       onClick={flowStage !== 'portrait' ? handleTap : undefined}
       className={`relative w-full ${
         flowStage === 'portrait'
-          ? 'min-h-[220vh] bg-[#0d0d2e] touch-pan-y'
+          ? 'min-h-[350vh] bg-[#000000] touch-pan-y'
           : 'h-[100dvh] overflow-hidden bg-[#0a080c] touch-none'
       } select-none flex flex-col items-center justify-start cursor-pointer`}
     >
@@ -257,7 +320,7 @@ export const MobilePaperTearOverlay: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* STAGE 3: HERO POLAROID PORTRAIT + FUNKY STATEMENT SECTION */}
+      {/* STAGE 3: HERO POLAROID PORTRAIT + SCROLL-DRIVEN WORD POP REVEAL SECTION */}
       {flowStage === 'portrait' && (
         <>
           {/* HERO POLAROID PORTRAIT CARD */}
@@ -407,65 +470,41 @@ export const MobilePaperTearOverlay: React.FC = () => {
             </motion.div>
           </motion.section>
 
-          {/* NEW SMOOTH & FUNKY "I BRIDGE THE GAP BETWEEN IDEAS & EXECUTION" SECTION */}
-          <section className="relative z-20 w-full min-h-[90dvh] px-5 py-14 flex flex-col items-center justify-center bg-gradient-to-b from-[#0d0d2e] via-[#120B24] to-[#0a080c] border-t border-white/10 text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 30, scale: 0.95 }}
-              whileInView={{ opacity: 1, y: 0, scale: 1 }}
-              viewport={{ once: false, amount: 0.3 }}
-              transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }}
-              className="max-w-md mx-auto flex flex-col items-center justify-center gap-6"
-            >
-              {/* Funky Glowing Tagline Badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-[#FF2E93]/30 via-[#8B5CF6]/30 to-[#00F5FF]/30 border border-[#00F5FF]/60 shadow-[0_0_20px_rgba(0,245,255,0.4)] backdrop-blur-md">
+          {/* SCROLL-DRIVEN WORD-BY-WORD POP REVEAL SECTION ON PURE BLACK BACKGROUND */}
+          <section
+            ref={bridgeSectionRef}
+            className="relative z-30 w-full min-h-[260vh] bg-black border-t border-white/10"
+          >
+            <div className="sticky top-0 left-0 w-full h-[100dvh] flex flex-col items-center justify-center p-6 bg-black text-center overflow-hidden">
+              {/* Luminous Small Line Badge */}
+              <motion.div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.15)] backdrop-blur-md mb-6">
                 <span className="w-2 h-2 rounded-full bg-[#00F5FF] animate-ping" />
-                <span className="font-mono-meta text-[10px] uppercase tracking-[0.35em] font-black text-white drop-shadow-[0_0_10px_rgba(0,245,255,0.9)]">
+                <span className="font-mono-meta text-[10px] uppercase tracking-[0.3em] font-black text-white">
                   YOUR IDEA. MY EXECUTION. ✦
                 </span>
-              </div>
+              </motion.div>
 
-              {/* Smooth & Funky Gradient Kinetic Typography */}
-              <h2 className="font-playfair text-3xl font-black uppercase tracking-tight leading-[1.25] text-transparent bg-clip-text bg-gradient-to-r from-[#FFFFFF] via-[#FFB3CB] to-[#00F5FF] drop-shadow-[0_0_30px_rgba(255,255,255,0.6)]">
-                I BRIDGE THE GAP BETWEEN{' '}
-                <span className="text-[#FFD600] font-black drop-shadow-[0_0_25px_rgba(255,214,0,1)]">
-                  IDEAS
-                </span>{' '}
-                &amp;{' '}
-                <span className="text-[#FF3B30] font-black drop-shadow-[0_0_25px_rgba(255,59,48,1)]">
-                  EXECUTION
-                </span>
-                .
-              </h2>
-
-              {/* Subtle Descriptive Subtext */}
-              <p className="font-dmsans text-xs text-[#F5F0EB]/85 font-light leading-relaxed max-w-xs">
-                I help business owners and brands turn what’s in their heads into content that feels, walks and talks like them — through strategy, storytelling, AI, UGC and editing.
-              </p>
-
-              {/* Funky Category Marquee Pill Tags */}
-              <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-                {[
-                  { name: 'AI VIDEO CREATOR', color: 'border-[#EC4899] text-[#FFB3CB]' },
-                  { name: 'CONTENT STRATEGIST', color: 'border-[#8B5CF6] text-[#C4B5FD]' },
-                  { name: 'VIDEO EDITOR', color: 'border-[#00F5FF] text-[#7DD3FC]' },
-                  { name: 'UGC CREATOR', color: 'border-[#FFD600] text-[#FDE047]' },
-                  { name: 'STORYTELLER', color: 'border-[#FF3B30] text-[#FCA5A5]' },
-                  { name: 'CONTENT PARTNER', color: 'border-[#10B981] text-[#6EE7B7]' },
-                ].map((pill, i) => (
-                  <motion.span
-                    key={i}
-                    whileHover={{ scale: 1.05 }}
-                    className={`px-3 py-1.5 rounded-full bg-white/5 border ${pill.color} font-mono-meta text-[10px] font-bold uppercase tracking-wider shadow-sm`}
-                  >
-                    ✦ {pill.name}
-                  </motion.span>
+              {/* Dynamic Word Pop Container */}
+              <div className="flex flex-wrap items-center justify-center leading-normal max-w-xs text-center py-2">
+                {BRIDGE_WORDS.map((wObj, idx) => (
+                  <ScrollWordPop
+                    key={idx}
+                    index={idx}
+                    wordObj={wObj}
+                    countProgress={countProgress}
+                  />
                 ))}
               </div>
-            </motion.div>
+
+              {/* Subtitle prompt */}
+              <p className="font-dmsans text-xs text-white/60 font-light leading-relaxed max-w-xs mt-6">
+                I help business owners and brands turn what’s in their heads into content that feels, walks and talks like them.
+              </p>
+            </div>
           </section>
 
-          {/* STAGE 5: BRANDS & IMPACT SECTION */}
-          <div className="relative z-30 bg-[#0a080c] text-white">
+          {/* BRANDS & IMPACT SECTION */}
+          <div className="relative z-40 bg-[#0a080c] text-white">
             <BrandCollaborationsSection />
           </div>
         </>
