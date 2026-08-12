@@ -238,7 +238,7 @@ export const MobilePaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 3: HERO POLAROID PORTRAIT SECTION (SILKY RISE-UP MOTION ON PHONE) */}
+      {/* PHASE 3: HERO POLAROID PORTRAIT SECTION (SILKY RISE-UP + FLOATING MOTION ON PHONE) */}
       {isStatementScreen && (
         <section className="relative z-20 w-full min-h-screen shrink-0 snap-start snap-always px-5 py-12 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#1E1035] via-[#1E1B4B] to-[#0d0d2e]">
           <motion.div
@@ -251,9 +251,20 @@ export const MobilePaperTearOverlay: React.FC = () => {
             }}
             className="w-full max-w-sm flex flex-col items-center justify-center gap-8 relative z-10 transform-gpu will-change-transform"
           >
-            {/* Top: Hero Polaroid Portrait Frame */}
+            {/* Top: Floating Hero Polaroid Portrait Frame */}
             <div className="flex flex-col items-center justify-center">
-              <div className="relative w-[min(76vw,270px)] my-2 cursor-pointer select-none transform-gpu rotate-2 will-change-transform">
+              <motion.div
+                animate={{
+                  y: [-6, 6, -6],
+                  rotate: [2, 3.5, 2],
+                }}
+                transition={{
+                  duration: 4.5,
+                  repeat: Infinity,
+                  ease: 'easeInOut',
+                }}
+                className="relative w-[min(76vw,270px)] my-2 cursor-pointer select-none transform-gpu will-change-transform"
+              >
                 {/* Polaroid Radial Glow */}
                 <div className="pointer-events-none absolute inset-0 m-auto h-[85%] w-[85%] rounded-full blur-2xl bg-gradient-to-r from-[#FFB3CB]/40 via-[#E91E8C]/30 to-transparent" />
 
@@ -309,7 +320,7 @@ export const MobilePaperTearOverlay: React.FC = () => {
                     storyteller
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </div>
 
             {/* Bottom: Heading & Branding */}
