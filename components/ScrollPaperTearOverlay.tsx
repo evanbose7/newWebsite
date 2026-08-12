@@ -120,7 +120,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
     offset: ['start end', 'end start'],
   });
 
-  // RESPONSIVE HERO PORTRAIT ANIMATION: On phone, starts centered & fits 100% in viewport without being cut off
+  // OPTIMIZED RESPONSIVE HERO PORTRAIT ANIMATION: Smooth, 60fps phone scrolling without clipping
   const portraitX = useTransform(
     portraitScrollProgress,
     [0.08, 0.35],
@@ -129,22 +129,22 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   const portraitY = useTransform(
     portraitScrollProgress,
     [0.08, 0.35],
-    [isMobile ? '15vh' : '40vh', '0vh']
+    [isMobile ? '8vh' : '40vh', '0vh']
   );
   const portraitRotate = useTransform(
     portraitScrollProgress,
     [0.08, 0.35],
-    [isMobile ? -4 : -16, 4]
+    [isMobile ? -2 : -16, 2]
   );
   const portraitScale = useTransform(
     portraitScrollProgress,
     [0.08, 0.35],
-    [isMobile ? 0.88 : 0.72, 1.0]
+    [isMobile ? 0.92 : 0.72, 1.0]
   );
   const portraitOpacity = useTransform(portraitScrollProgress, [0.05, 0.2], [0, 1]);
 
   const textContentOpacity = useTransform(portraitScrollProgress, [0.1, 0.3], [0, 1]);
-  const textContentY = useTransform(portraitScrollProgress, [0.1, 0.3], [30, 0]);
+  const textContentY = useTransform(portraitScrollProgress, [0.1, 0.3], [25, 0]);
 
   // Track scroll progress for Phase 4 (Paper Tear Section): Finishes smoothly on scroll
   const { scrollYProgress: tearScrollProgress } = useScroll({
@@ -569,11 +569,11 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 3: HERO POLAROID PORTRAIT DIAGONAL ENTRANCE SECTION */}
+      {/* PHASE 3: HERO POLAROID PORTRAIT DIAGONAL ENTRANCE SECTION (TRANSPARENT BACKGROUND TO PREVENT INDIGO STRIPE ON MOBILE) */}
       {isStatementScreen && (
         <section
           ref={portraitSectionRef}
-          className="relative z-20 w-full min-h-[110vh] px-4 sm:px-14 md:px-24 py-12 flex items-center justify-center overflow-hidden bg-gradient-to-b from-transparent via-[#1E1B4B]/40 to-[#0d0d2e]"
+          className="relative z-20 w-full min-h-[100dvh] sm:min-h-[110vh] px-4 sm:px-14 md:px-24 py-8 sm:py-12 flex items-center justify-center overflow-hidden bg-transparent"
         >
           <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-8 sm:gap-12 lg:gap-16 items-center relative z-10 sticky top-[10vh] sm:top-[15vh]">
             {/* Left Column: Heading & Branding */}
