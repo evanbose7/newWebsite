@@ -68,22 +68,33 @@ export const MobilePaperTearOverlay: React.FC = () => {
     phonePointsRef.current = pPoints;
   }, []);
 
-  // Lock body scroll during word reveal phase; unlock when statement screen is active
+  // Set native window CSS Scroll Snap on phone when statement screen is active
   useEffect(() => {
     if (isStatementScreen) {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflowY = 'auto';
       document.body.style.touchAction = 'pan-y';
-      document.documentElement.style.overflow = 'auto';
+      document.body.style.scrollSnapType = 'y mandatory';
+      document.body.style.scrollBehavior = 'smooth';
+
+      document.documentElement.style.overflowY = 'auto';
+      document.documentElement.style.scrollSnapType = 'y mandatory';
+      document.documentElement.style.scrollBehavior = 'smooth';
     } else {
       document.body.style.overflow = 'hidden';
       document.body.style.touchAction = 'none';
+      document.body.style.scrollSnapType = 'none';
+
       document.documentElement.style.overflow = 'hidden';
+      document.documentElement.style.scrollSnapType = 'none';
     }
 
     return () => {
       document.body.style.overflow = 'auto';
       document.body.style.touchAction = 'auto';
+      document.body.style.scrollSnapType = 'none';
+
       document.documentElement.style.overflow = 'auto';
+      document.documentElement.style.scrollSnapType = 'none';
     };
   }, [isStatementScreen]);
 
@@ -296,7 +307,7 @@ export const MobilePaperTearOverlay: React.FC = () => {
       onClick={!isStatementScreen ? handleTap : undefined}
       className={`relative w-full ${
         isStatementScreen
-          ? 'min-h-[320vh] bg-[#0d0d2e] snap-y snap-proximity scroll-smooth touch-pan-y'
+          ? 'min-h-[320vh] bg-[#0d0d2e]'
           : 'h-[100dvh] overflow-hidden bg-[#0a080c] touch-none'
       } select-none flex flex-col items-center justify-start cursor-pointer`}
     >
@@ -375,9 +386,12 @@ export const MobilePaperTearOverlay: React.FC = () => {
         </div>
       )}
 
-      {/* PHASE 2: BRIGHT VIBRANT STATISTICAL OBSERVATION FOLD (SNAP TARGET) */}
+      {/* PHASE 2: BRIGHT VIBRANT STATISTICAL OBSERVATION FOLD (SNAP TARGET 1) */}
       {isStatementScreen && (
-        <section className="relative z-20 w-full h-[100dvh] shrink-0 snap-start snap-always flex flex-col items-center justify-center p-5 overflow-hidden bg-transparent">
+        <section
+          style={{ scrollSnapAlign: 'start', scrollSnapStop: 'always' }}
+          className="relative z-20 w-full h-[100dvh] shrink-0 flex flex-col items-center justify-center p-5 overflow-hidden bg-transparent"
+        >
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 18 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -431,9 +445,12 @@ export const MobilePaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 3: HERO POLAROID PORTRAIT SECTION (SNAPS TO FIT ENTIRE PORTRAIT IN CENTER) */}
+      {/* PHASE 3: HERO POLAROID PORTRAIT SECTION (SNAP TARGET 2 - SNAPS TO FIT ENTIRE PORTRAIT IN CENTER) */}
       {isStatementScreen && (
-        <section className="relative z-20 w-full h-[100dvh] shrink-0 snap-start snap-always px-5 py-6 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#1E1035] via-[#1E1B4B] to-[#0d0d2e]">
+        <section
+          style={{ scrollSnapAlign: 'start', scrollSnapStop: 'always' }}
+          className="relative z-20 w-full h-[100dvh] shrink-0 px-5 py-6 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#1E1035] via-[#1E1B4B] to-[#0d0d2e]"
+        >
           <motion.div
             initial={{ opacity: 0, y: 60, scale: 0.94 }}
             whileInView={{ opacity: 1, y: 0, scale: 1 }}
