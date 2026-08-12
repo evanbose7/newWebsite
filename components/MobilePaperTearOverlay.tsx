@@ -104,8 +104,32 @@ export const MobilePaperTearOverlay: React.FC = () => {
   return (
     <div
       onClick={!isStatementScreen ? handleTap : undefined}
-      className={`relative w-full ${isStatementScreen ? 'min-h-screen bg-[#0a080c]' : 'h-[100dvh] overflow-hidden bg-[#0a080c] touch-none'} select-none flex flex-col items-center justify-start cursor-pointer`}
+      className={`relative w-full ${isStatementScreen ? 'min-h-screen bg-[#0d0d2e]' : 'h-[100dvh] overflow-hidden bg-[#0a080c] touch-none'} select-none flex flex-col items-center justify-start cursor-pointer`}
     >
+      {/* HARDWARE ACCELERATED 60FPS EXPANDING INDIGO & BLUE AURA DOT FOR PHONE */}
+      <motion.div
+        initial={{ scale: 0, opacity: 0 }}
+        animate={{
+          scale: isStatementScreen ? 3.0 : 0,
+          opacity: isStatementScreen ? 1 : 0,
+        }}
+        transition={{
+          duration: 2.2,
+          ease: [0.16, 1, 0.3, 1],
+        }}
+        style={{ willChange: 'transform, opacity' }}
+        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120vw] h-[120vw] max-w-[500px] max-h-[500px] rounded-full pointer-events-none z-0 bg-[radial-gradient(circle_at_center,_#EC4899_0%,_#8B5CF6_30%,_#3B82F6_55%,_#1E1B4B_80%,_#0d0d2e_100%)] transform-gpu translate-z-0"
+      />
+
+      {/* Dynamic Ambient Indigo & Violet Depth Layer */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: isStatementScreen ? 1 : 0 }}
+        transition={{ duration: 2.2, ease: 'easeInOut' }}
+        style={{ willChange: 'opacity' }}
+        className="fixed inset-0 w-full h-full pointer-events-none z-0 bg-gradient-to-b from-[#1E1035] via-[#1E1B4B] to-[#0d0d2e] transform-gpu"
+      />
+
       {/* PHASE 1: QUESTION SENTENCES WORD-BY-WORD TAP REVEAL */}
       {!isStatementScreen && (
         <div className="w-full h-[100dvh] flex items-center justify-center p-5 relative overflow-hidden bg-[#0a080c]">
@@ -159,10 +183,7 @@ export const MobilePaperTearOverlay: React.FC = () => {
 
       {/* PHASE 2: BRIGHT VIBRANT STATISTICAL OBSERVATION FOLD */}
       {isStatementScreen && (
-        <section className="relative z-20 w-full h-[100dvh] min-h-[100dvh] flex flex-col items-center justify-center p-5 overflow-hidden bg-[#0a080c] shrink-0">
-          {/* Internal Soft Glow (Contained inside Phase 2) */}
-          <div className="absolute inset-0 pointer-events-none z-0 bg-[radial-gradient(circle_at_center,_rgba(236,72,153,0.18)_0%,_rgba(139,92,246,0.12)_35%,_rgba(10,8,12,1)_80%)]" />
-
+        <section className="relative z-20 w-full h-[100dvh] min-h-[100dvh] flex flex-col items-center justify-center p-5 overflow-hidden bg-transparent shrink-0">
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 18 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -171,7 +192,7 @@ export const MobilePaperTearOverlay: React.FC = () => {
           >
             <div className="flex flex-col items-center justify-center gap-5">
               {/* Luminous Neon Pill Badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#EC4899]/30 border-2 border-[#EC4899] shadow-[0_0_20px_rgba(236,72,153,0.8)]">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#EC4899]/30 border-2 border-[#EC4899] shadow-[0_0_20px_rgba(236,72,153,0.8)] backdrop-blur-md">
                 <span className="w-2 h-2 rounded-full bg-[#FFD600] animate-ping" />
                 <span className="font-dmsans text-[10px] uppercase tracking-[0.3em] font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.9)]">
                   STATISTICAL OBSERVATION
@@ -216,9 +237,9 @@ export const MobilePaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 3: HERO POLAROID PORTRAIT SECTION (60FPS SMOOTH NATIVE WINDOW SCROLL) */}
+      {/* PHASE 3: HERO POLAROID PORTRAIT SECTION (MATCHES AURA COLOR: #1E1035 -> #1E1B4B -> #0d0d2e ON PHONE) */}
       {isStatementScreen && (
-        <section className="relative z-20 w-full min-h-[100dvh] px-5 py-12 flex flex-col items-center justify-center overflow-hidden bg-[#0a080c] shrink-0">
+        <section className="relative z-20 w-full min-h-[100dvh] px-5 py-12 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#1E1035] via-[#1E1B4B] to-[#0d0d2e] shrink-0">
           <div className="w-full max-w-sm flex flex-col items-center justify-center gap-8 relative z-10">
             {/* Top: Hero Polaroid Portrait Frame */}
             <div className="flex flex-col items-center justify-center">
