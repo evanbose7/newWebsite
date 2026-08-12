@@ -43,19 +43,22 @@ export const MobilePaperTearOverlay: React.FC = () => {
 
   const revealTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Lock body scroll during word reveal phase; unlock when statement screen is active
+  // Lock body scroll during word reveal phase; unlock window scrolling when statement screen is active
   useEffect(() => {
     if (isStatementScreen) {
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
+      document.body.style.overflow = 'auto';
+      document.body.style.touchAction = 'pan-y';
+      document.documentElement.style.overflow = 'auto';
     } else {
       document.body.style.overflow = 'hidden';
+      document.body.style.touchAction = 'none';
       document.documentElement.style.overflow = 'hidden';
     }
 
     return () => {
-      document.body.style.overflow = 'unset';
-      document.documentElement.style.overflow = 'unset';
+      document.body.style.overflow = 'auto';
+      document.body.style.touchAction = 'auto';
+      document.documentElement.style.overflow = 'auto';
     };
   }, [isStatementScreen]);
 
@@ -100,8 +103,8 @@ export const MobilePaperTearOverlay: React.FC = () => {
 
   return (
     <div
-      onClick={handleTap}
-      className={`relative w-full ${isStatementScreen ? 'min-h-[200dvh] overflow-y-auto touch-pan-y' : 'h-[100dvh] overflow-hidden touch-none'} bg-[#0a080c] select-none flex flex-col items-center justify-start cursor-pointer`}
+      onClick={!isStatementScreen ? handleTap : undefined}
+      className={`relative w-full ${isStatementScreen ? 'min-h-screen bg-[#0a080c]' : 'h-[100dvh] overflow-hidden bg-[#0a080c] touch-none'} select-none flex flex-col items-center justify-start cursor-pointer`}
     >
       {/* PHASE 1: QUESTION SENTENCES WORD-BY-WORD TAP REVEAL */}
       {!isStatementScreen && (
@@ -154,10 +157,10 @@ export const MobilePaperTearOverlay: React.FC = () => {
         </div>
       )}
 
-      {/* PHASE 2: BRIGHT VIBRANT STATISTICAL OBSERVATION FOLD (CLEAN 100dvh FULL SCREEN, NO BORDER PEEKING) */}
+      {/* PHASE 2: BRIGHT VIBRANT STATISTICAL OBSERVATION FOLD */}
       {isStatementScreen && (
-        <section className="relative z-20 w-full h-[100dvh] min-h-[100dvh] flex flex-col items-center justify-center p-5 overflow-hidden bg-[#0a080c]">
-          {/* Internal Soft Glow (Contained inside Phase 2, strictly prevents bleeding to bottom) */}
+        <section className="relative z-20 w-full h-[100dvh] min-h-[100dvh] flex flex-col items-center justify-center p-5 overflow-hidden bg-[#0a080c] shrink-0">
+          {/* Internal Soft Glow (Contained inside Phase 2) */}
           <div className="absolute inset-0 pointer-events-none z-0 bg-[radial-gradient(circle_at_center,_rgba(236,72,153,0.18)_0%,_rgba(139,92,246,0.12)_35%,_rgba(10,8,12,1)_80%)]" />
 
           <motion.div
@@ -166,13 +169,9 @@ export const MobilePaperTearOverlay: React.FC = () => {
             transition={{ duration: 1.2, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className="relative z-10 max-w-md mx-auto text-center flex flex-col items-center justify-center gap-5 transform-gpu"
           >
-            <motion.div
-              animate={{ y: [-5, 5, -5] }}
-              transition={{ duration: 5.0, repeat: Infinity, ease: 'easeInOut' }}
-              className="flex flex-col items-center justify-center gap-5"
-            >
+            <div className="flex flex-col items-center justify-center gap-5">
               {/* Luminous Neon Pill Badge */}
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#EC4899]/30 border-2 border-[#EC4899] shadow-[0_0_20px_rgba(236,72,153,0.8)] backdrop-blur-md">
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#EC4899]/30 border-2 border-[#EC4899] shadow-[0_0_20px_rgba(236,72,153,0.8)]">
                 <span className="w-2 h-2 rounded-full bg-[#FFD600] animate-ping" />
                 <span className="font-dmsans text-[10px] uppercase tracking-[0.3em] font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.9)]">
                   STATISTICAL OBSERVATION
@@ -193,7 +192,7 @@ export const MobilePaperTearOverlay: React.FC = () => {
 
               {/* Luminous Laser Accent Bar */}
               <div className="w-24 h-1.5 bg-gradient-to-r from-[#FF2E93] via-[#FFD600] to-[#00F5FF] rounded-full shadow-[0_0_25px_rgba(0,245,255,1)] mt-1 animate-pulse" />
-            </motion.div>
+            </div>
           </motion.div>
 
           {/* SWIPE DOWN CUE */}
@@ -217,18 +216,18 @@ export const MobilePaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 3: HERO POLAROID PORTRAIT SECTION (REVEALED ONLY WHEN SWIPING DOWN ON PHONE, ZERO PEEKING INTO PHASE 2) */}
+      {/* PHASE 3: HERO POLAROID PORTRAIT SECTION (60FPS SMOOTH NATIVE WINDOW SCROLL) */}
       {isStatementScreen && (
-        <section className="relative z-20 w-full min-h-[100dvh] px-5 py-16 flex flex-col items-center justify-center overflow-hidden bg-[#0a080c]">
+        <section className="relative z-20 w-full min-h-[100dvh] px-5 py-12 flex flex-col items-center justify-center overflow-hidden bg-[#0a080c] shrink-0">
           <div className="w-full max-w-sm flex flex-col items-center justify-center gap-8 relative z-10">
             {/* Top: Hero Polaroid Portrait Frame */}
-            <div className="flex flex-col items-center justify-center pt-4">
-              <div className="relative w-[min(76vw,270px)] my-2 cursor-pointer select-none transform-gpu rotate-2">
+            <div className="flex flex-col items-center justify-center">
+              <div className="relative w-[min(76vw,270px)] my-2 cursor-pointer select-none transform-gpu rotate-2 will-change-transform">
                 {/* Polaroid Radial Glow */}
-                <div className="pointer-events-none absolute inset-0 m-auto h-[85%] w-[85%] rounded-full blur-3xl bg-gradient-to-r from-[#FFB3CB]/40 via-[#E91E8C]/30 to-transparent" />
+                <div className="pointer-events-none absolute inset-0 m-auto h-[85%] w-[85%] rounded-full blur-2xl bg-gradient-to-r from-[#FFB3CB]/40 via-[#E91E8C]/30 to-transparent" />
 
                 {/* White Polaroid Card */}
-                <div className="relative bg-white p-3 shadow-[0_25px_60px_-15px_rgba(0,0,0,0.85)] rounded-sm transform transition-all duration-500 ease-out hover:rotate-3 hover:scale-[1.03]">
+                <div className="relative bg-white p-3 shadow-2xl shadow-black/80 rounded-sm transform-gpu">
                   <div className="relative overflow-hidden aspect-[2/3] bg-[#F5F0EB]">
                     <img
                       src="/assets/kamna-portrait.jpg"
