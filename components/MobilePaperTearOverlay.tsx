@@ -35,55 +35,38 @@ const SEQUENCE_WORDS: WordItem[][] = [
   ],
 ];
 
-// Words for the scroll-driven pop reveal on black background
-interface BridgeWord {
-  text: string;
-  className: string;
-}
+// Single replacement words sequence for scroll
+const REPLACE_WORDS = ['I', 'BRIDGE', 'THE', 'GAP', 'BETWEEN', 'IDEAS', '&', 'EXECUTION.'];
 
-const BRIDGE_WORDS: BridgeWord[] = [
-  { text: 'I', className: 'text-[#F5F0EB] font-bold text-3xl' },
-  { text: 'BRIDGE', className: 'text-[#00F5FF] font-black text-3xl drop-shadow-[0_0_20px_rgba(0,245,255,0.9)]' },
-  { text: 'THE', className: 'text-[#F5F0EB]/90 font-bold text-3xl' },
-  { text: 'GAP', className: 'text-[#FFB3CB] font-black text-3xl drop-shadow-[0_0_20px_rgba(255,179,203,0.9)]' },
-  { text: 'BETWEEN', className: 'text-[#F5F0EB]/90 font-bold text-3xl' },
-  { text: 'IDEAS', className: 'text-[#FFD600] font-black text-4xl drop-shadow-[0_0_25px_rgba(255,214,0,1)] tracking-tight' },
-  { text: '&', className: 'text-[#8B5CF6] font-black text-3xl' },
-  { text: 'EXECUTION.', className: 'text-[#FF3B30] font-black text-4xl drop-shadow-[0_0_25px_rgba(255,59,48,1)] tracking-tight' },
-];
-
-// Single Word Pop Item component that reacts to scroll progress
-const ScrollWordPop: React.FC<{
-  index: number;
-  wordObj: BridgeWord;
-  countProgress: MotionValue<number>;
-}> = ({ index, wordObj, countProgress }) => {
-  const [isVisible, setIsVisible] = useState(false);
+// Display component showing only 1 single white word at a time on black background
+const SingleWordScrollDisplay: React.FC<{ wordIdxValue: MotionValue<number> }> = ({ wordIdxValue }) => {
+  const [currentIdx, setCurrentIdx] = useState(0);
 
   useEffect(() => {
-    const unsubscribe = countProgress.on('change', (latest) => {
-      setIsVisible(latest >= index + 1);
+    const unsubscribe = wordIdxValue.on('change', (latest) => {
+      const idx = Math.min(REPLACE_WORDS.length - 1, Math.max(0, Math.floor(latest)));
+      setCurrentIdx(idx);
     });
-    setIsVisible(countProgress.get() >= index + 1);
+    const initialIdx = Math.min(REPLACE_WORDS.length - 1, Math.max(0, Math.floor(wordIdxValue.get())));
+    setCurrentIdx(initialIdx);
     return () => unsubscribe();
-  }, [countProgress, index]);
+  }, [wordIdxValue]);
 
   return (
-    <motion.span
-      initial={{ opacity: 0, scale: 0.4, y: 15 }}
-      animate={{
-        opacity: isVisible ? 1 : 0,
-        scale: isVisible ? 1 : 0.4,
-        y: isVisible ? 0 : 15,
-      }}
-      transition={{
-        duration: 0.35,
-        ease: [0.175, 0.885, 0.32, 1.275], // Smooth bouncy pop curve
-      }}
-      className={`inline-block mx-1.5 my-1 select-none font-playfair ${wordObj.className}`}
-    >
-      {wordObj.text}
-    </motion.span>
+    <div className="sticky top-0 left-0 w-full h-[100dvh] flex items-center justify-center p-6 bg-black text-center overflow-hidden">
+      <AnimatePresence mode="wait">
+        <motion.h2
+          key={currentIdx}
+          initial={{ opacity: 0, scale: 0.9, y: 12 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 1.08, y: -12 }}
+          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          className="font-playfair text-4xl sm:text-5xl font-black tracking-tight text-white select-none uppercase drop-shadow-md"
+        >
+          {REPLACE_WORDS[currentIdx]}
+        </motion.h2>
+      </AnimatePresence>
+    </div>
   );
 };
 
@@ -118,14 +101,14 @@ export const MobilePaperTearOverlay: React.FC = () => {
     };
   }, [flowStage]);
 
-  // Track scroll progress for the "I BRIDGE THE GAP..." word pop section
+  // Track scroll progress for single-word replacement section
   const { scrollYProgress: bridgeScrollProgress } = useScroll({
     target: bridgeSectionRef,
     offset: ['start start', 'end end'],
   });
 
-  // Map scroll progress (0.05 -> 0.85) to visible word count (1 -> 8)
-  const countProgress = useTransform(bridgeScrollProgress, [0.05, 0.85], [1, BRIDGE_WORDS.length]);
+  // Map scroll progress (0.0 -> 0.95) to active word index (0 -> 7)
+  const wordIdxValue = useTransform(bridgeScrollProgress, [0.0, 0.95], [0, REPLACE_WORDS.length - 0.01]);
 
   const currentWords = sentenceIdx < SEQUENCE_WORDS.length ? SEQUENCE_WORDS[sentenceIdx] : SEQUENCE_WORDS[SEQUENCE_WORDS.length - 1];
 
@@ -176,7 +159,7 @@ export const MobilePaperTearOverlay: React.FC = () => {
       onClick={flowStage !== 'portrait' ? handleTap : undefined}
       className={`relative w-full ${
         flowStage === 'portrait'
-          ? 'min-h-[350vh] bg-[#000000] touch-pan-y'
+          ? 'min-h-[380vh] bg-[#000000] touch-pan-y'
           : 'h-[100dvh] overflow-hidden bg-[#0a080c] touch-none'
       } select-none flex flex-col items-center justify-start cursor-pointer`}
     >
@@ -319,7 +302,7 @@ export const MobilePaperTearOverlay: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* STAGE 3: HERO POLAROID PORTRAIT + SCROLL-DRIVEN WORD POP REVEAL SECTION (FINAL STAGE ON PHONE) */}
+      {/* STAGE 3: HERO POLAROID PORTRAIT + SINGLE-WORD SCROLL REPLACEMENT ON BLACK BACKGROUND */}
       {flowStage === 'portrait' && (
         <>
           {/* HERO POLAROID PORTRAIT CARD */}
@@ -469,37 +452,12 @@ export const MobilePaperTearOverlay: React.FC = () => {
             </motion.div>
           </motion.section>
 
-          {/* SCROLL-DRIVEN WORD-BY-WORD POP REVEAL SECTION ON PURE BLACK BACKGROUND */}
+          {/* SINGLE-WORD SCROLL REPLACEMENT SECTION ON SOLID BLACK BACKGROUND */}
           <section
             ref={bridgeSectionRef}
-            className="relative z-30 w-full min-h-[260vh] bg-black border-t border-white/10"
+            className="relative z-30 w-full min-h-[300vh] bg-black border-t border-white/10"
           >
-            <div className="sticky top-0 left-0 w-full h-[100dvh] flex flex-col items-center justify-center p-6 bg-black text-center overflow-hidden">
-              {/* Luminous Small Line Badge */}
-              <motion.div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 border border-white/20 shadow-[0_0_15px_rgba(255,255,255,0.15)] backdrop-blur-md mb-6">
-                <span className="w-2 h-2 rounded-full bg-[#00F5FF] animate-ping" />
-                <span className="font-mono-meta text-[10px] uppercase tracking-[0.3em] font-black text-white">
-                  YOUR IDEA. MY EXECUTION. ✦
-                </span>
-              </motion.div>
-
-              {/* Dynamic Word Pop Container */}
-              <div className="flex flex-wrap items-center justify-center leading-normal max-w-xs text-center py-2">
-                {BRIDGE_WORDS.map((wObj, idx) => (
-                  <ScrollWordPop
-                    key={idx}
-                    index={idx}
-                    wordObj={wObj}
-                    countProgress={countProgress}
-                  />
-                ))}
-              </div>
-
-              {/* Subtitle prompt */}
-              <p className="font-dmsans text-xs text-white/60 font-light leading-relaxed max-w-xs mt-6">
-                I help business owners and brands turn what’s in their heads into content that feels, walks and talks like them.
-              </p>
-            </div>
+            <SingleWordScrollDisplay wordIdxValue={wordIdxValue} />
           </section>
         </>
       )}
