@@ -182,7 +182,7 @@ export const MobilePaperTearOverlay: React.FC = () => {
         </div>
       )}
 
-      {/* PHASE 2: BRIGHT VIBRANT STATISTICAL OBSERVATION FOLD (CSS SCROLL SNAP-LOCKED) */}
+      {/* PHASE 2: BRIGHT VIBRANT STATISTICAL OBSERVATION FOLD */}
       {isStatementScreen && (
         <section className="relative z-20 w-full h-screen shrink-0 snap-start snap-always flex flex-col items-center justify-center p-5 overflow-hidden bg-transparent">
           <motion.div
@@ -238,10 +238,19 @@ export const MobilePaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 3: HERO POLAROID PORTRAIT SECTION (CSS SCROLL SNAP-LOCKED, ZERO SCROLLBAR JITTER) */}
+      {/* PHASE 3: HERO POLAROID PORTRAIT SECTION (SILKY RISE-UP MOTION ON PHONE) */}
       {isStatementScreen && (
         <section className="relative z-20 w-full min-h-screen shrink-0 snap-start snap-always px-5 py-12 flex flex-col items-center justify-center overflow-hidden bg-gradient-to-b from-[#1E1035] via-[#1E1B4B] to-[#0d0d2e]">
-          <div className="w-full max-w-sm flex flex-col items-center justify-center gap-8 relative z-10">
+          <motion.div
+            initial={{ opacity: 0, y: 70, scale: 0.94 }}
+            whileInView={{ opacity: 1, y: 0, scale: 1 }}
+            viewport={{ once: false, amount: 0.25 }}
+            transition={{
+              duration: 1.2,
+              ease: [0.16, 1, 0.3, 1],
+            }}
+            className="w-full max-w-sm flex flex-col items-center justify-center gap-8 relative z-10 transform-gpu will-change-transform"
+          >
             {/* Top: Hero Polaroid Portrait Frame */}
             <div className="flex flex-col items-center justify-center">
               <div className="relative w-[min(76vw,270px)] my-2 cursor-pointer select-none transform-gpu rotate-2 will-change-transform">
@@ -332,7 +341,7 @@ export const MobilePaperTearOverlay: React.FC = () => {
                 </a>
               </div>
             </div>
-          </div>
+          </motion.div>
         </section>
       )}
     </div>
