@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { BrandCollaborationsSection } from './BrandCollaborationsSection';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface WordItem {
   text: string;
@@ -37,225 +36,27 @@ const SEQUENCE_WORDS: WordItem[][] = [
 ];
 
 export const MobilePaperTearOverlay: React.FC = () => {
-  const tearSectionRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
   const [sentenceIdx, setSentenceIdx] = useState(0);
   const [visibleCount, setVisibleCount] = useState(1);
   const [isRevealing, setIsRevealing] = useState(false);
 
-  // Flow states for phone: 'question' | 'statement' | 'portrait' | 'brands'
-  const [flowStage, setFlowStage] = useState<'question' | 'statement' | 'portrait' | 'brands'>('question');
+  // Flow stages for phone: 'question' | 'statement' | 'portrait'
+  const [flowStage, setFlowStage] = useState<'question' | 'statement' | 'portrait'>('question');
 
   const revealTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const tearAnimationRef = useRef<number>(0);
-  const phonePointsRef = useRef<number[]>([]);
-  const pulseRef = useRef<number>(0);
 
-  // Seed phone procedural curve points (108 points from mobile artifact)
+  // Lock body scroll on phone for full-screen 100dvh interactive experience
   useEffect(() => {
-    const pPoints: number[] = [];
-    let pSeed = 98765;
-    const pRnd = () => {
-      pSeed = (pSeed * 1664525 + 1013904223) % 4294967296;
-      return pSeed / 4294967296;
-    };
-    for (let i = 0; i <= 108; i++) {
-      const base = pRnd() * 2 - 1;
-      const wave1 = Math.sin(i * 0.27) * 0.6 + Math.cos(i * 0.19) * 0.4;
-      const wave2 = Math.sin(i * 1.9) * 0.55 + Math.sin(i * 2.7) * 0.35;
-      const noise = (pRnd() - 0.5) * 0.9 + Math.sin(i * 7.3) * 0.22 + Math.sin(i * 13.1) * 0.12;
-      pPoints.push(base * 0.35 + wave1 * 0.22 + wave2 * 0.35 + noise * 0.32);
-    }
-    phonePointsRef.current = pPoints;
-  }, []);
-
-  // Lock body scroll for fixed 100dvh viewport until brands stage
-  useEffect(() => {
-    if (flowStage === 'brands') {
-      document.body.style.overflowY = 'auto';
-      document.body.style.touchAction = 'pan-y';
-      document.documentElement.style.overflowY = 'auto';
-    } else {
-      document.body.style.overflow = 'hidden';
-      document.body.style.touchAction = 'none';
-      document.documentElement.style.overflow = 'hidden';
-    }
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+    document.documentElement.style.overflow = 'hidden';
 
     return () => {
-      document.body.style.overflow = 'auto';
+      document.body.style.overflow = 'unset';
       document.body.style.touchAction = 'auto';
-      document.documentElement.style.overflow = 'auto';
+      document.documentElement.style.overflow = 'unset';
     };
-  }, [flowStage]);
-
-  // Track scroll progress for Paper Tear Section on Phone
-  const { scrollYProgress: tearScrollProgress } = useScroll({
-    target: tearSectionRef,
-    offset: ['start 85%', 'end 15%'],
-  });
-
-  const tearProgress = useTransform(tearScrollProgress, [0.0, 0.75], [0, 1]);
-
-  const cubicEase = (v: number) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
-
-  // 60 FPS Mobile Phone Canvas Renderer (Exact Phone Artifact Algorithm)
-  const renderCanvas = useCallback(
-    (timestamp: number) => {
-      if (flowStage !== 'brands') return;
-      const canvas = canvasRef.current;
-      if (!canvas) {
-        tearAnimationRef.current = requestAnimationFrame(renderCanvas);
-        return;
-      }
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        tearAnimationRef.current = requestAnimationFrame(renderCanvas);
-        return;
-      }
-
-      const dpr = Math.max(1, Math.min(2.5, window.devicePixelRatio || 1));
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const gw = Math.floor(w * dpr);
-      const gh = Math.floor(h * dpr);
-
-      if (canvas.width !== gw || canvas.height !== gh) {
-        canvas.width = gw;
-        canvas.height = gh;
-      }
-      if (canvas.style.width !== w + 'px' || canvas.style.height !== h + 'px') {
-        canvas.style.width = w + 'px';
-        canvas.style.height = h + 'px';
-      }
-
-      const rawT = tearProgress.get();
-      const t = cubicEase(Math.max(0, Math.min(1, rawT)));
-
-      pulseRef.current = timestamp * 0.0011;
-      const pulse = pulseRef.current;
-
-      ctx.clearRect(0, 0, gw, gh);
-
-      // 1. REVEALED BACKGROUND UNDER TEAR LINE: PHONE ARTIFACT #0a080c + PLUM RADIAL GRADIENTS
-      ctx.fillStyle = '#0a080c';
-      ctx.fillRect(0, 0, gw, gh);
-
-      const baseGrad = ctx.createRadialGradient(gw * 0.5, gh * 0.62, 0, gw * 0.5, gh * 0.62, gw * 1.1);
-      baseGrad.addColorStop(0, '#120c14');
-      baseGrad.addColorStop(0.3, '#0e0a10');
-      baseGrad.addColorStop(0.58, '#0a080c');
-      baseGrad.addColorStop(0.85, '#07050a');
-      baseGrad.addColorStop(1, '#050508');
-      ctx.fillStyle = baseGrad;
-      ctx.fillRect(0, 0, gw, gh);
-
-      const cx = gw * 0.5;
-      const cy = gh * 0.72;
-      const auraRadius = gw * 0.95;
-      const pulseMult = 1 + Math.sin(pulse * 0.65) * 0.022;
-      const auraGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, auraRadius * pulseMult);
-      auraGrad.addColorStop(0, 'rgba(36, 20, 44, 0.18)');
-      auraGrad.addColorStop(0.24, 'rgba(28, 16, 32, 0.095)');
-      auraGrad.addColorStop(0.46, 'rgba(24, 14, 28, 0.04)');
-      auraGrad.addColorStop(0.72, 'rgba(18, 10, 18, 0.015)');
-      auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = auraGrad;
-      ctx.fillRect(0, 0, gw, gh);
-
-      // 2. TOP PAPER MASK REVEAL (DEEP NAVY #0d0d2e)
-      const pointsSource = phonePointsRef.current;
-      const pointsCount = pointsSource.length ? pointsSource.length - 1 : 108;
-      const topY = gh * 0.35;
-      const botY = gh * 0.55;
-      const cutX = t * gw;
-      const pathPoints: { x: number; y: number }[] = [];
-
-      for (let i = 0; i <= pointsCount; i++) {
-        const ratio = i / pointsCount;
-        const px = ratio * gw;
-        if (px > cutX + 0.5) break;
-        const py = topY + (botY - topY) * ratio;
-        const noiseVal = (pointsSource[i] ?? 0) * (16 * dpr);
-        pathPoints.push({ x: px, y: py + noiseVal });
-      }
-
-      if (pathPoints.length === 0) pathPoints.push({ x: 0, y: topY });
-
-      ctx.save();
-      const clipPath = new Path2D();
-      clipPath.moveTo(0, 0);
-      clipPath.lineTo(gw, 0);
-      clipPath.lineTo(gw, gh);
-
-      if (t < 0.999) {
-        clipPath.lineTo(cutX, gh);
-      } else {
-        clipPath.lineTo(gw, botY);
-      }
-
-      for (let i = pathPoints.length - 1; i >= 0; i--) {
-        clipPath.lineTo(pathPoints[i].x, pathPoints[i].y);
-      }
-      clipPath.lineTo(0, 0);
-      clipPath.closePath();
-      ctx.clip(clipPath);
-
-      ctx.fillStyle = '#0d0d2e';
-      ctx.fillRect(0, 0, gw, gh);
-
-      ctx.restore();
-
-      // 3. PHONE RIPPED PAPER FIBER EDGES & 3D DEPTH SHADOWS
-      if (t > 0.001 && pathPoints.length > 1) {
-        const tearLine = new Path2D();
-        tearLine.moveTo(pathPoints[0].x, pathPoints[0].y);
-        for (let i = 1; i < pathPoints.length; i++) {
-          tearLine.lineTo(pathPoints[i].x, pathPoints[i].y);
-        }
-
-        ctx.save();
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.52)';
-        ctx.shadowBlur = 24 * dpr;
-        ctx.shadowOffsetY = 18 * dpr;
-        ctx.shadowOffsetX = 8 * dpr;
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.48)';
-        ctx.lineWidth = 26 * dpr;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.stroke(tearLine);
-        ctx.restore();
-
-        ctx.save();
-        ctx.strokeStyle = '#e8e0d5';
-        ctx.lineWidth = 11.2 * dpr;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.stroke(tearLine);
-        ctx.restore();
-
-        ctx.save();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-        ctx.lineWidth = 2.6 * dpr;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.stroke(tearLine);
-        ctx.restore();
-      }
-
-      tearAnimationRef.current = requestAnimationFrame(renderCanvas);
-    },
-    [tearProgress, flowStage]
-  );
-
-  useEffect(() => {
-    if (flowStage === 'brands') {
-      tearAnimationRef.current = requestAnimationFrame(renderCanvas);
-    }
-    return () => {
-      cancelAnimationFrame(tearAnimationRef.current);
-    };
-  }, [renderCanvas, flowStage]);
+  }, []);
 
   const currentWords = sentenceIdx < SEQUENCE_WORDS.length ? SEQUENCE_WORDS[sentenceIdx] : SEQUENCE_WORDS[SEQUENCE_WORDS.length - 1];
 
@@ -303,12 +104,8 @@ export const MobilePaperTearOverlay: React.FC = () => {
 
   return (
     <div
-      onClick={flowStage !== 'brands' ? handleTap : undefined}
-      className={`relative w-full ${
-        flowStage === 'brands'
-          ? 'min-h-[320vh] bg-[#0d0d2e] touch-pan-y'
-          : 'h-[100dvh] overflow-hidden bg-[#0a080c] touch-none'
-      } select-none flex flex-col items-center justify-start cursor-pointer`}
+      onClick={handleTap}
+      className="relative w-full h-[100dvh] overflow-hidden bg-[#0a080c] select-none touch-none flex items-center justify-center p-5 cursor-pointer"
     >
       {/* HARDWARE ACCELERATED 60FPS EXPANDING INDIGO & BLUE AURA DOT FOR PHONE */}
       <motion.div
@@ -442,13 +239,13 @@ export const MobilePaperTearOverlay: React.FC = () => {
                 }}
                 className="btn-gradient relative inline-flex items-center justify-center whitespace-nowrap rounded-full px-6 py-3 text-[11px] font-bold uppercase tracking-widest text-white shadow-[0_4px_25px_rgba(233,30,140,0.6)] animate-pulse"
               >
-                Explore Portrait & Brand &rarr;
+                Explore Portrait &rarr;
               </button>
             </motion.div>
           </motion.section>
         )}
 
-        {/* STAGE 3: HERO POLAROID PORTRAIT (SILKY TAP-TO-REVEAL CROSSFADE & FLOATING MOTION) */}
+        {/* STAGE 3: HERO POLAROID PORTRAIT (FINAL STAGE ON PHONE) */}
         {flowStage === 'portrait' && (
           <motion.section
             key="portrait-screen"
@@ -574,46 +371,11 @@ export const MobilePaperTearOverlay: React.FC = () => {
                     Personal brand strategist, Content creator, Storyteller, and Ghostwriter.
                   </p>
                 </div>
-
-                {/* Action Button to unlock Brands section */}
-                <div className="pt-1 flex justify-center">
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setFlowStage('brands');
-                    }}
-                    className="btn-gradient relative inline-flex items-center justify-center whitespace-nowrap rounded-full px-5 py-2.5 text-[11px] font-bold uppercase tracking-widest text-white shadow-[0_4px_30px_rgba(233,30,140,0.5)]"
-                  >
-                    View Brands & Impact &rarr;
-                  </button>
-                </div>
               </div>
             </div>
           </motion.section>
         )}
       </AnimatePresence>
-
-      {/* STAGE 4 & STAGE 5: BRANDS & PAPER TEAR REVEAL */}
-      {flowStage === 'brands' && (
-        <>
-          {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION */}
-          <section
-            ref={tearSectionRef}
-            className="relative z-20 w-full min-h-[140vh] overflow-hidden"
-          >
-            <div className="sticky top-0 left-0 w-full h-[100dvh] h-screen overflow-hidden bg-transparent">
-              <div className="relative w-full h-full">
-                <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block pointer-events-none" />
-              </div>
-            </div>
-          </section>
-
-          {/* PHASE 5: BRANDS & IMPACT SECTION SHIFTED UP TO TOUCH THE PAPER TEAR LINE */}
-          <div className="relative z-30 -mt-[45vh] bg-[#0a080c] text-white">
-            <BrandCollaborationsSection />
-          </div>
-        </>
-      )}
     </div>
   );
 };
