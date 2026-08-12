@@ -43,7 +43,7 @@ export const MobilePaperTearOverlay: React.FC = () => {
 
   const revealTimerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Lock body scroll during word reveal phase; unlock when statement screen is active for swiping down
+  // Lock body scroll during word reveal phase; unlock when statement screen is active
   useEffect(() => {
     if (isStatementScreen) {
       document.body.style.overflow = 'unset';
@@ -64,7 +64,7 @@ export const MobilePaperTearOverlay: React.FC = () => {
   const triggerNextSentence = (nextIdx: number) => {
     if (revealTimerRef.current) clearInterval(revealTimerRef.current);
 
-    // After final sentence ("Don't just skim past this question."), trigger smooth expanding aura transition
+    // After final sentence ("Don't just skim past this question."), transition to statement screen
     if (nextIdx >= SEQUENCE_WORDS.length) {
       setIsStatementScreen(true);
       return;
@@ -100,41 +100,12 @@ export const MobilePaperTearOverlay: React.FC = () => {
 
   return (
     <div
-      ref={containerRef => {
-        if (containerRef && isStatementScreen) {
-          // ensure container allows smooth vertical scrolling when statement screen is unlocked
-        }
-      }}
       onClick={handleTap}
       className={`relative w-full ${isStatementScreen ? 'min-h-[200dvh] overflow-y-auto touch-pan-y' : 'h-[100dvh] overflow-hidden touch-none'} bg-[#0a080c] select-none flex flex-col items-center justify-start cursor-pointer`}
     >
-      {/* HARDWARE ACCELERATED 60FPS EXPANDING INDIGO & BLUE AURA DOT FOR PHONE */}
-      <motion.div
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{
-          scale: isStatementScreen ? 3.0 : 0,
-          opacity: isStatementScreen ? 1 : 0,
-        }}
-        transition={{
-          duration: 2.2,
-          ease: [0.16, 1, 0.3, 1],
-        }}
-        style={{ willChange: 'transform, opacity' }}
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120vw] h-[120vw] max-w-[500px] max-h-[500px] rounded-full pointer-events-none z-0 bg-[radial-gradient(circle_at_center,_#EC4899_0%,_#8B5CF6_30%,_#3B82F6_55%,_#1E1B4B_80%,_#0d0d2e_100%)] transform-gpu translate-z-0"
-      />
-
-      {/* Dynamic Ambient Indigo & Violet Depth Layer */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: isStatementScreen ? 1 : 0 }}
-        transition={{ duration: 2.2, ease: 'easeInOut' }}
-        style={{ willChange: 'opacity' }}
-        className="fixed inset-0 w-full h-full pointer-events-none z-0 bg-gradient-to-b from-[#1E1035] via-[#1E1B4B] to-[#0d0d2e] transform-gpu"
-      />
-
       {/* PHASE 1: QUESTION SENTENCES WORD-BY-WORD TAP REVEAL */}
       {!isStatementScreen && (
-        <div className="w-full h-[100dvh] flex items-center justify-center p-5">
+        <div className="w-full h-[100dvh] flex items-center justify-center p-5 relative overflow-hidden bg-[#0a080c]">
           <motion.div
             key={`sentence-${sentenceIdx}`}
             initial={{ opacity: 1 }}
@@ -167,31 +138,32 @@ export const MobilePaperTearOverlay: React.FC = () => {
               })}
             </h1>
           </motion.div>
+
+          {/* TAP INSTRUCTION PROMPT */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: [0.35, 0.85, 0.35] }}
+            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
+            className="absolute bottom-8 left-0 right-0 text-center pointer-events-none flex flex-col items-center justify-center gap-1.5 z-30"
+          >
+            <span className="font-mono-meta text-[10px] text-white/70 uppercase tracking-[0.35em] font-bold drop-shadow">
+              TAP ANYWHERE TO CONTINUE
+            </span>
+            <span className="text-white/40 text-xs font-light">👆</span>
+          </motion.div>
         </div>
       )}
 
-      {/* TAP INSTRUCTION PROMPT */}
-      {!isStatementScreen && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: [0.35, 0.85, 0.35] }}
-          transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute bottom-8 left-0 right-0 text-center pointer-events-none flex flex-col items-center justify-center gap-1.5 z-30"
-        >
-          <span className="font-mono-meta text-[10px] text-white/70 uppercase tracking-[0.35em] font-bold drop-shadow">
-            TAP ANYWHERE TO CONTINUE
-          </span>
-          <span className="text-white/40 text-xs font-light">👆</span>
-        </motion.div>
-      )}
-
-      {/* PHASE 2: BRIGHT VIBRANT STATISTICAL OBSERVATION FOLD */}
+      {/* PHASE 2: BRIGHT VIBRANT STATISTICAL OBSERVATION FOLD (CLEAN 100dvh FULL SCREEN, NO BORDER PEEKING) */}
       {isStatementScreen && (
-        <section className="relative z-20 w-full min-h-[100dvh] flex items-center justify-center p-5 overflow-hidden">
+        <section className="relative z-20 w-full h-[100dvh] min-h-[100dvh] flex flex-col items-center justify-center p-5 overflow-hidden bg-[#0a080c]">
+          {/* Internal Soft Glow (Contained inside Phase 2, strictly prevents bleeding to bottom) */}
+          <div className="absolute inset-0 pointer-events-none z-0 bg-[radial-gradient(circle_at_center,_rgba(236,72,153,0.18)_0%,_rgba(139,92,246,0.12)_35%,_rgba(10,8,12,1)_80%)]" />
+
           <motion.div
             initial={{ opacity: 0, scale: 0.96, y: 18 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 1.2, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 1.2, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
             className="relative z-10 max-w-md mx-auto text-center flex flex-col items-center justify-center gap-5 transform-gpu"
           >
             <motion.div
@@ -224,11 +196,11 @@ export const MobilePaperTearOverlay: React.FC = () => {
             </motion.div>
           </motion.div>
 
-          {/* SCROLL DOWN CUE FOR PHASE 3 HERO PORTRAIT */}
+          {/* SWIPE DOWN CUE */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 1.8 }}
+            transition={{ duration: 0.8, delay: 1.2 }}
             className="absolute bottom-8 left-0 right-0 text-center pointer-events-none flex flex-col items-center justify-center gap-1.5 z-30"
           >
             <span className="font-mono-meta text-[10px] text-pink-300 uppercase tracking-[0.3em] font-bold drop-shadow">
@@ -245,12 +217,12 @@ export const MobilePaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 3: HERO POLAROID PORTRAIT SECTION (REVEALED WHEN SWIPING DOWN ON PHONE) */}
+      {/* PHASE 3: HERO POLAROID PORTRAIT SECTION (REVEALED ONLY WHEN SWIPING DOWN ON PHONE, ZERO PEEKING INTO PHASE 2) */}
       {isStatementScreen && (
-        <section className="relative z-20 w-full min-h-[100dvh] px-5 py-12 flex items-center justify-center overflow-hidden bg-transparent">
+        <section className="relative z-20 w-full min-h-[100dvh] px-5 py-16 flex flex-col items-center justify-center overflow-hidden bg-[#0a080c]">
           <div className="w-full max-w-sm flex flex-col items-center justify-center gap-8 relative z-10">
-            {/* Top: Hero Polaroid Portrait Frame (Static in flow, no peeking) */}
-            <div className="flex flex-col items-center justify-center">
+            {/* Top: Hero Polaroid Portrait Frame */}
+            <div className="flex flex-col items-center justify-center pt-4">
               <div className="relative w-[min(76vw,270px)] my-2 cursor-pointer select-none transform-gpu rotate-2">
                 {/* Polaroid Radial Glow */}
                 <div className="pointer-events-none absolute inset-0 m-auto h-[85%] w-[85%] rounded-full blur-3xl bg-gradient-to-r from-[#FFB3CB]/40 via-[#E91E8C]/30 to-transparent" />
