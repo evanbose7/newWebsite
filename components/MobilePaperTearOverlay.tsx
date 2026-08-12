@@ -1,621 +1,871 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { motion, AnimatePresence, useScroll, useTransform } from 'framer-motion';
-import { BrandCollaborationsSection } from './BrandCollaborationsSection';
+import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-interface WordItem {
-  text: string;
-  isEmphasized?: boolean;
+// --- PORTFOLIO DATA ---
+interface ProjectItem {
+  id: string;
+  title: string;
+  category: 'AI VIDEO' | 'SOCIAL CONTENT' | 'VIDEO EDITING' | 'UGC' | 'YOUTUBE' | 'LONG-FORM';
+  desc: string;
+  tag: string;
 }
 
-const SEQUENCE_WORDS: WordItem[][] = [
-  // Sentence 0
-  [{ text: 'Hey' }],
-  // Sentence 1
-  [
-    { text: 'What' },
-    { text: 'does' },
-    { text: 'your' },
-    { text: 'BRAND', isEmphasized: true },
-    { text: 'look' },
-    { text: 'like' },
-  ],
-  // Sentence 2
-  [{ text: 'Or' }, { text: 'sound' }, { text: 'like' }],
-  // Sentence 3
-  [{ text: 'No' }, { text: 'seriously!!' }],
-  // Sentence 4
-  [
-    { text: "Don't" },
-    { text: 'just' },
-    { text: 'skim' },
-    { text: 'past' },
-    { text: 'this' },
-    { text: 'question.' },
-  ],
+const PORTFOLIO_PROJECTS: ProjectItem[] = [
+  {
+    id: 'p1',
+    title: 'Neon Cyber Genesis',
+    category: 'AI VIDEO',
+    desc: 'Turning raw concepts into AI-generated cinematic visual stories for tech brands.',
+    tag: 'AI Animation & Gen-AI',
+  },
+  {
+    id: 'p2',
+    title: 'Architectural Heritage',
+    category: 'SOCIAL CONTENT',
+    desc: 'High-converting organic social video series showcasing luxury interior spaces.',
+    tag: '4L+ Views Campaign',
+  },
+  {
+    id: 'p3',
+    title: 'Creator Voice Edit',
+    category: 'VIDEO EDITING',
+    desc: 'Dynamic short-form editing with retention hooks, motion typography, and sound design.',
+    tag: 'Short-Form Reels',
+  },
+  {
+    id: 'p4',
+    title: 'Paws & Living UGC',
+    category: 'UGC',
+    desc: 'Relatable creator-led lifestyle UGC content for premium pet and wellness brands.',
+    tag: 'Organic UGC',
+  },
+  {
+    id: 'p5',
+    title: 'Brand Origin Documentary',
+    category: 'YOUTUBE',
+    desc: 'Deep storytelling YouTube documentary editing for founder-led startup brands.',
+    tag: 'YouTube Storytelling',
+  },
+  {
+    id: 'p6',
+    title: 'Jewellery Craft Series',
+    category: 'LONG-FORM',
+    desc: 'Cinematic long-form visual craft series highlighting bespoke jewellery artisans.',
+    tag: 'Long-Form Craft',
+  },
+];
+
+// --- DICE ROLL PHILOSOPHY QUOTES ---
+const DICE_QUOTES = [
+  "Every post is another chance. Every idea is another roll. 🎲",
+  "You can spend three days making something... or post an ordinary Tuesday thought that hits 100k! 🚀",
+  "I can't promise every video will blow up. Nobody can. But I promise to care about the process. ✦",
+  "Somewhere between the flops, experiments, and jackpot moments — you find what makes people care. 💡",
+  "So, shall we roll the dice? 🎲",
 ];
 
 export const MobilePaperTearOverlay: React.FC = () => {
-  const tearSectionRef = useRef<HTMLDivElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-
-  const [sentenceIdx, setSentenceIdx] = useState(0);
-  const [visibleCount, setVisibleCount] = useState(1);
-  const [isRevealing, setIsRevealing] = useState(false);
-
-  // Flow stages for phone: 'question' | 'statement' | 'portrait'
-  const [flowStage, setFlowStage] = useState<'question' | 'statement' | 'portrait'>('question');
-
-  const revealTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const tearAnimationRef = useRef<number>(0);
-  const phonePointsRef = useRef<number[]>([]);
-  const pulseRef = useRef<number>(0);
-
-  // Seed phone procedural curve points (108 points from mobile artifact)
+  // Mobile smooth scrolling lock control
   useEffect(() => {
-    const pPoints: number[] = [];
-    let pSeed = 98765;
-    const pRnd = () => {
-      pSeed = (pSeed * 1664525 + 1013904223) % 4294967296;
-      return pSeed / 4294967296;
-    };
-    for (let i = 0; i <= 108; i++) {
-      const base = pRnd() * 2 - 1;
-      const wave1 = Math.sin(i * 0.27) * 0.6 + Math.cos(i * 0.19) * 0.4;
-      const wave2 = Math.sin(i * 1.9) * 0.55 + Math.sin(i * 2.7) * 0.35;
-      const noise = (pRnd() - 0.5) * 0.9 + Math.sin(i * 7.3) * 0.22 + Math.sin(i * 13.1) * 0.12;
-      pPoints.push(base * 0.35 + wave1 * 0.22 + wave2 * 0.35 + noise * 0.32);
-    }
-    phonePointsRef.current = pPoints;
-  }, []);
-
-  // Unlock window scroll when reaching Hero Portrait stage
-  useEffect(() => {
-    if (flowStage === 'portrait') {
-      document.body.style.overflowY = 'auto';
-      document.body.style.touchAction = 'pan-y';
-      document.documentElement.style.overflowY = 'auto';
-    } else {
-      document.body.style.overflow = 'hidden';
-      document.body.style.touchAction = 'none';
-      document.documentElement.style.overflow = 'hidden';
-    }
+    document.body.style.overflowY = 'auto';
+    document.body.style.touchAction = 'pan-y';
+    document.documentElement.style.overflowY = 'auto';
 
     return () => {
       document.body.style.overflow = 'auto';
       document.body.style.touchAction = 'auto';
       document.documentElement.style.overflow = 'auto';
     };
-  }, [flowStage]);
+  }, []);
 
-  // Track scroll progress for Paper Tear Section on Phone
-  const { scrollYProgress: tearScrollProgress } = useScroll({
-    target: tearSectionRef,
-    offset: ['start 85%', 'end 15%'],
+  // Filter state for portfolio
+  const [activeCategory, setActiveCategory] = useState<string>('ALL');
+
+  // Contact form state
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    service: 'AI VIDEO',
+    details: '',
+    budget: '$1,000 - $3,000',
   });
+  const [formSubmitted, setFormSubmitted] = useState(false);
 
-  const tearProgress = useTransform(tearScrollProgress, [0.0, 0.75], [0, 1]);
+  // Dice roll game state
+  const [diceIndex, setDiceIndex] = useState(0);
+  const [isRolling, setIsRolling] = useState(false);
 
-  const cubicEase = (v: number) => (v < 0.5 ? 4 * v * v * v : 1 - Math.pow(-2 * v + 2, 3) / 2);
-
-  // 60 FPS Mobile Phone Canvas Renderer (Exact Phone Artifact Algorithm)
-  const renderCanvas = useCallback(
-    (timestamp: number) => {
-      if (flowStage !== 'portrait') return;
-      const canvas = canvasRef.current;
-      if (!canvas) {
-        tearAnimationRef.current = requestAnimationFrame(renderCanvas);
-        return;
-      }
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        tearAnimationRef.current = requestAnimationFrame(renderCanvas);
-        return;
-      }
-
-      const dpr = Math.max(1, Math.min(2.5, window.devicePixelRatio || 1));
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const gw = Math.floor(w * dpr);
-      const gh = Math.floor(h * dpr);
-
-      if (canvas.width !== gw || canvas.height !== gh) {
-        canvas.width = gw;
-        canvas.height = gh;
-      }
-      if (canvas.style.width !== w + 'px' || canvas.style.height !== h + 'px') {
-        canvas.style.width = w + 'px';
-        canvas.style.height = h + 'px';
-      }
-
-      const rawT = tearProgress.get();
-      const t = cubicEase(Math.max(0, Math.min(1, rawT)));
-
-      pulseRef.current = timestamp * 0.0011;
-      const pulse = pulseRef.current;
-
-      ctx.clearRect(0, 0, gw, gh);
-
-      // 1. REVEALED BACKGROUND UNDER TEAR LINE: PHONE ARTIFACT #0a080c + PLUM RADIAL GRADIENTS
-      ctx.fillStyle = '#0a080c';
-      ctx.fillRect(0, 0, gw, gh);
-
-      const baseGrad = ctx.createRadialGradient(gw * 0.5, gh * 0.62, 0, gw * 0.5, gh * 0.62, gw * 1.1);
-      baseGrad.addColorStop(0, '#120c14');
-      baseGrad.addColorStop(0.3, '#0e0a10');
-      baseGrad.addColorStop(0.58, '#0a080c');
-      baseGrad.addColorStop(0.85, '#07050a');
-      baseGrad.addColorStop(1, '#050508');
-      ctx.fillStyle = baseGrad;
-      ctx.fillRect(0, 0, gw, gh);
-
-      const cx = gw * 0.5;
-      const cy = gh * 0.72;
-      const auraRadius = gw * 0.95;
-      const pulseMult = 1 + Math.sin(pulse * 0.65) * 0.022;
-      const auraGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, auraRadius * pulseMult);
-      auraGrad.addColorStop(0, 'rgba(36, 20, 44, 0.18)');
-      auraGrad.addColorStop(0.24, 'rgba(28, 16, 32, 0.095)');
-      auraGrad.addColorStop(0.46, 'rgba(24, 14, 28, 0.04)');
-      auraGrad.addColorStop(0.72, 'rgba(18, 10, 18, 0.015)');
-      auraGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = auraGrad;
-      ctx.fillRect(0, 0, gw, gh);
-
-      // 2. TOP PAPER MASK REVEAL (DEEP NAVY #0d0d2e)
-      const pointsSource = phonePointsRef.current;
-      const pointsCount = pointsSource.length ? pointsSource.length - 1 : 108;
-      const topY = gh * 0.35;
-      const botY = gh * 0.55;
-      const cutX = t * gw;
-      const pathPoints: { x: number; y: number }[] = [];
-
-      for (let i = 0; i <= pointsCount; i++) {
-        const ratio = i / pointsCount;
-        const px = ratio * gw;
-        if (px > cutX + 0.5) break;
-        const py = topY + (botY - topY) * ratio;
-        const noiseVal = (pointsSource[i] ?? 0) * (16 * dpr);
-        pathPoints.push({ x: px, y: py + noiseVal });
-      }
-
-      if (pathPoints.length === 0) pathPoints.push({ x: 0, y: topY });
-
-      ctx.save();
-      const clipPath = new Path2D();
-      clipPath.moveTo(0, 0);
-      clipPath.lineTo(gw, 0);
-      clipPath.lineTo(gw, gh);
-
-      if (t < 0.999) {
-        clipPath.lineTo(cutX, gh);
-      } else {
-        clipPath.lineTo(gw, botY);
-      }
-
-      for (let i = pathPoints.length - 1; i >= 0; i--) {
-        clipPath.lineTo(pathPoints[i].x, pathPoints[i].y);
-      }
-      clipPath.lineTo(0, 0);
-      clipPath.closePath();
-      ctx.clip(clipPath);
-
-      ctx.fillStyle = '#0d0d2e';
-      ctx.fillRect(0, 0, gw, gh);
-
-      ctx.restore();
-
-      // 3. PHONE RIPPED PAPER FIBER EDGES & 3D DEPTH SHADOWS
-      if (t > 0.001 && pathPoints.length > 1) {
-        const tearLine = new Path2D();
-        tearLine.moveTo(pathPoints[0].x, pathPoints[0].y);
-        for (let i = 1; i < pathPoints.length; i++) {
-          tearLine.lineTo(pathPoints[i].x, pathPoints[i].y);
-        }
-
-        ctx.save();
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.52)';
-        ctx.shadowBlur = 24 * dpr;
-        ctx.shadowOffsetY = 18 * dpr;
-        ctx.shadowOffsetX = 8 * dpr;
-        ctx.strokeStyle = 'rgba(0, 0, 0, 0.48)';
-        ctx.lineWidth = 26 * dpr;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.stroke(tearLine);
-        ctx.restore();
-
-        ctx.save();
-        ctx.strokeStyle = '#e8e0d5';
-        ctx.lineWidth = 11.2 * dpr;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.stroke(tearLine);
-        ctx.restore();
-
-        ctx.save();
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
-        ctx.lineWidth = 2.6 * dpr;
-        ctx.lineCap = 'round';
-        ctx.lineJoin = 'round';
-        ctx.stroke(tearLine);
-        ctx.restore();
-      }
-
-      tearAnimationRef.current = requestAnimationFrame(renderCanvas);
-    },
-    [tearProgress, flowStage]
-  );
-
-  useEffect(() => {
-    if (flowStage === 'portrait') {
-      tearAnimationRef.current = requestAnimationFrame(renderCanvas);
-    }
-    return () => {
-      cancelAnimationFrame(tearAnimationRef.current);
-    };
-  }, [renderCanvas, flowStage]);
-
-  const currentWords = sentenceIdx < SEQUENCE_WORDS.length ? SEQUENCE_WORDS[sentenceIdx] : SEQUENCE_WORDS[SEQUENCE_WORDS.length - 1];
-
-  const triggerNextSentence = (nextIdx: number) => {
-    if (revealTimerRef.current) clearInterval(revealTimerRef.current);
-
-    // After final sentence ("Don't just skim past this question."), transition to statement screen
-    if (nextIdx >= SEQUENCE_WORDS.length) {
-      setFlowStage('statement');
-      return;
-    }
-
-    setSentenceIdx(nextIdx);
-    setVisibleCount(1);
-    setIsRevealing(true);
-
-    const targetWords = SEQUENCE_WORDS[nextIdx].length;
-
-    if (targetWords <= 1) {
-      setIsRevealing(false);
-      return;
-    }
-
-    let count = 1;
-
-    revealTimerRef.current = setInterval(() => {
-      count += 1;
-      setVisibleCount(count);
-      if (count >= targetWords) {
-        if (revealTimerRef.current) clearInterval(revealTimerRef.current);
-        setIsRevealing(false);
-      }
-    }, 220);
+  const handleRollDice = () => {
+    if (isRolling) return;
+    setIsRolling(true);
+    setTimeout(() => {
+      setDiceIndex((prev) => (prev + 1) % DICE_QUOTES.length);
+      setIsRolling(false);
+    }, 600);
   };
 
-  const handleTap = () => {
-    if (isRevealing) return;
-
-    if (flowStage === 'question') {
-      triggerNextSentence(sentenceIdx + 1);
-    } else if (flowStage === 'statement') {
-      setFlowStage('portrait');
-    }
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || !formData.email) return;
+    setFormSubmitted(true);
+    setTimeout(() => setFormSubmitted(false), 5000);
   };
+
+  const scrollToContact = () => {
+    const el = document.getElementById('contact-section');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const filteredProjects =
+    activeCategory === 'ALL'
+      ? PORTFOLIO_PROJECTS
+      : PORTFOLIO_PROJECTS.filter((p) => p.category === activeCategory);
 
   return (
-    <div
-      onClick={flowStage !== 'portrait' ? handleTap : undefined}
-      className={`relative w-full ${
-        flowStage === 'portrait'
-          ? 'min-h-[320vh] bg-[#0d0d2e] touch-pan-y'
-          : 'h-[100dvh] overflow-hidden bg-[#0a080c] touch-none'
-      } select-none flex flex-col items-center justify-start cursor-pointer`}
-    >
-      {/* HARDWARE ACCELERATED 60FPS EXPANDING INDIGO & BLUE AURA DOT FOR PHONE */}
-      <motion.div
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{
-          scale: flowStage !== 'question' ? 3.0 : 0,
-          opacity: flowStage !== 'question' ? 1 : 0,
-        }}
-        transition={{
-          duration: 2.2,
-          ease: [0.16, 1, 0.3, 1],
-        }}
-        style={{ willChange: 'transform, opacity' }}
-        className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120vw] h-[120vw] max-w-[500px] max-h-[500px] rounded-full pointer-events-none z-0 bg-[radial-gradient(circle_at_center,_#EC4899_0%,_#8B5CF6_30%,_#3B82F6_55%,_#1E1B4B_80%,_#0d0d2e_100%)] transform-gpu translate-z-0"
-      />
+    <div className="w-full min-h-screen bg-[#0A080C] text-[#F5F0EB] font-dmsans select-none overflow-x-hidden relative">
+      {/* Dynamic Background Radial Aura */}
+      <div className="fixed inset-0 pointer-events-none z-0 bg-[radial-gradient(ellipse_at_top,_rgba(236,72,153,0.15)_0%,_rgba(139,92,246,0.12)_35%,_rgba(10,8,12,1)_85%)]" />
 
-      {/* Dynamic Ambient Indigo & Violet Depth Layer */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: flowStage !== 'question' ? 1 : 0 }}
-        transition={{ duration: 2.2, ease: 'easeInOut' }}
-        style={{ willChange: 'opacity' }}
-        className="fixed inset-0 w-full h-full pointer-events-none z-0 bg-gradient-to-b from-[#1E1035] via-[#1E1B4B] to-[#0d0d2e] transform-gpu"
-      />
+      {/* --- SECTION 01: HERO --- */}
+      <section className="relative z-10 min-h-[100dvh] px-5 py-10 flex flex-col items-center justify-center text-center">
+        {/* Luminous Brand Tag */}
+        <motion.div
+          initial={{ opacity: 0, y: -15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EC4899]/20 border border-[#EC4899]/50 shadow-[0_0_15px_rgba(236,72,153,0.4)] backdrop-blur-md mb-4"
+        >
+          <span className="w-2 h-2 rounded-full bg-[#FFD600] animate-ping" />
+          <span className="font-mono-meta text-[10px] uppercase tracking-[0.3em] font-black text-white">
+            IDEAS & EXECUTION ✦
+          </span>
+        </motion.div>
 
-      {/* STAGE 1: QUESTION SENTENCES WORD-BY-WORD TAP REVEAL */}
-      {flowStage === 'question' && (
-        <div className="w-full h-[100dvh] flex items-center justify-center p-5 relative overflow-hidden bg-[#0a080c]">
+        {/* Hero Title */}
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.15 }}
+          className="font-playfair text-3xl font-black uppercase tracking-tight text-white leading-tight mb-3"
+        >
+          HI, I’M ARI.
+        </motion.h1>
+
+        {/* Subtitle */}
+        <motion.p
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.3 }}
+          className="font-playfair text-base font-bold text-transparent bg-clip-text bg-gradient-to-r from-[#FFB3CB] via-[#E91E8C] to-[#00F5FF] leading-snug mb-4 max-w-xs"
+        >
+          I BRIDGE THE GAP BETWEEN IDEAS & EXECUTION.
+        </motion.p>
+
+        {/* Floating Polaroid Hero Frame with Sticker Tags */}
+        <motion.div
+          initial={{ opacity: 0, scale: 0.92 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 1.0, delay: 0.4 }}
+          className="relative my-4"
+        >
           <motion.div
-            key={`sentence-${sentenceIdx}`}
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0, scale: 1.03 }}
-            transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-            className="relative z-20 w-full max-w-md mx-auto text-center"
+            animate={{
+              y: [-4, 4, -4],
+              rotate: [1.5, 3, 1.5],
+            }}
+            transition={{
+              duration: 4.5,
+              repeat: Infinity,
+              ease: 'easeInOut',
+            }}
+            className="relative w-[240px] cursor-pointer select-none"
           >
-            <h1 className="text-3xl font-bold tracking-tight text-center leading-tight flex flex-wrap items-center justify-center gap-x-3 gap-y-2 select-none font-editorial">
-              {currentWords.slice(0, visibleCount).map((wordObj, i) => {
-                const isEmphasized = wordObj.isEmphasized;
+            {/* Ambient Radial Glow */}
+            <div className="pointer-events-none absolute inset-0 m-auto h-[85%] w-[85%] rounded-full blur-2xl bg-gradient-to-r from-[#FFB3CB]/40 via-[#E91E8C]/30 to-transparent" />
 
-                return (
-                  <motion.span
-                    key={`sentence-${sentenceIdx}-word-${i}`}
-                    initial={{ opacity: 0, scale: 0.97 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{
-                      duration: 0.18,
-                      ease: [0.16, 1, 0.3, 1],
-                    }}
-                    className={
-                      isEmphasized
-                        ? 'font-extrabold text-[#FF3B30] tracking-wider relative inline-block uppercase drop-shadow-[0_0_15px_rgba(255,59,48,0.6)]'
-                        : 'text-white font-semibold inline-block drop-shadow-md'
-                    }
-                  >
-                    {wordObj.text}
-                  </motion.span>
-                );
-              })}
-            </h1>
-          </motion.div>
-
-          {/* TAP INSTRUCTION PROMPT */}
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: [0.35, 0.85, 0.35] }}
-            transition={{ duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
-            className="absolute bottom-8 left-0 right-0 text-center pointer-events-none flex flex-col items-center justify-center gap-1.5 z-30"
-          >
-            <span className="font-mono-meta text-[10px] text-white/70 uppercase tracking-[0.35em] font-bold drop-shadow">
-              TAP ANYWHERE TO CONTINUE
-            </span>
-            <span className="text-white/40 text-xs font-light">👆</span>
-          </motion.div>
-        </div>
-      )}
-
-      {/* STAGE 2: BRIGHT VIBRANT STATISTICAL OBSERVATION FOLD */}
-      <AnimatePresence mode="wait">
-        {flowStage === 'statement' && (
-          <motion.section
-            key="statement-screen"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 1.05 }}
-            transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
-            className="relative z-20 w-full h-[100dvh] flex flex-col items-center justify-center p-5 overflow-hidden bg-transparent"
-          >
-            <motion.div
-              initial={{ opacity: 0, y: 18 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 1.2, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="relative z-10 max-w-md mx-auto text-center flex flex-col items-center justify-center gap-5 transform-gpu"
-            >
-              <div className="flex flex-col items-center justify-center gap-5">
-                {/* Luminous Neon Pill Badge */}
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#EC4899]/30 border-2 border-[#EC4899] shadow-[0_0_20px_rgba(236,72,153,0.8)] backdrop-blur-md">
-                  <span className="w-2 h-2 rounded-full bg-[#FFD600] animate-ping" />
-                  <span className="font-dmsans text-[10px] uppercase tracking-[0.3em] font-black text-white drop-shadow-[0_0_10px_rgba(255,255,255,0.9)]">
-                    STATISTICAL OBSERVATION
-                  </span>
-                </div>
-
-                {/* 100% Solid Pure White & Neon Glowing Statement Typography */}
-                <h2 className="font-playfair text-2xl font-black text-[#FFFFFF] leading-[1.28] tracking-tight drop-shadow-[0_0_25px_rgba(255,255,255,0.9)]">
-                  &ldquo;do you know tht{' '}
-                  <span className="text-[#FFD600] font-black drop-shadow-[0_0_25px_rgba(255,214,0,1)]">
-                    50% people
-                  </span>{' '}
-                  are poor is india because they dont have money above the{' '}
-                  <span className="text-[#00F5FF] underline decoration-[#00F5FF] decoration-2 underline-offset-4 font-black drop-shadow-[0_0_25px_rgba(0,245,255,1)]">
-                    poverty line
-                  </span>&rdquo;
-                </h2>
-
-                {/* Luminous Laser Accent Bar */}
-                <div className="w-24 h-1.5 bg-gradient-to-r from-[#FF2E93] via-[#FFD600] to-[#00F5FF] rounded-full shadow-[0_0_25px_rgba(0,245,255,1)] mt-1 animate-pulse" />
+            {/* White Polaroid Frame */}
+            <div className="relative bg-white p-2.5 shadow-2xl shadow-black/90 rounded-sm">
+              <div className="relative overflow-hidden aspect-[2/3] bg-[#F5F0EB]">
+                <img
+                  src="/assets/kamna-portrait.jpg"
+                  alt="ARI — Content Strategist & Visual Creator"
+                  className="w-full h-full object-cover object-center"
+                />
               </div>
-            </motion.div>
+              <p className="text-center text-[#0A0A0A]/85 font-caveat text-base pt-1.5 pb-0.5 tracking-wide font-bold">
+                @ariimakesflims
+              </p>
+            </div>
 
-            {/* ELEGANT TAP PROMPT TO DISSOLVE INTO HERO PORTRAIT */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 1.2 }}
-              className="absolute bottom-8 left-0 right-0 text-center pointer-events-auto flex flex-col items-center justify-center gap-2 z-30"
-            >
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setFlowStage('portrait');
-                }}
-                className="btn-gradient relative inline-flex items-center justify-center whitespace-nowrap rounded-full px-6 py-3 text-[11px] font-bold uppercase tracking-widest text-white shadow-[0_4px_25px_rgba(233,30,140,0.6)] animate-pulse"
-              >
-                Explore Portrait &rarr;
-              </button>
-            </motion.div>
-          </motion.section>
-        )}
-      </AnimatePresence>
-
-      {/* STAGE 3: HERO POLAROID PORTRAIT + CONTINUOUS SCROLL TO PAPER TEAR & BRANDS */}
-      {flowStage === 'portrait' && (
-        <>
-          <motion.section
-            key="portrait-screen"
-            initial={{ opacity: 0, scale: 0.92, y: 25 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 1.0, ease: [0.16, 1, 0.3, 1] }}
-            className="relative z-20 w-full min-h-[100dvh] px-5 py-8 flex flex-col items-center justify-center overflow-hidden bg-transparent"
-          >
-            <div className="w-full max-w-sm flex flex-col items-center justify-center gap-6 relative z-10 transform-gpu">
-              {/* Top: Floating Hero Polaroid Portrait Frame */}
-              <div className="flex flex-col items-center justify-center">
-                <motion.div
-                  animate={{
-                    y: [-5, 5, -5],
-                    rotate: [2, 3.5, 2],
-                  }}
-                  transition={{
-                    duration: 4.5,
-                    repeat: Infinity,
-                    ease: 'easeInOut',
-                  }}
-                  className="relative w-[min(72vw,255px)] my-1 cursor-pointer select-none transform-gpu will-change-transform"
-                >
-                  {/* Polaroid Radial Glow */}
-                  <div className="pointer-events-none absolute inset-0 m-auto h-[85%] w-[85%] rounded-full blur-2xl bg-gradient-to-r from-[#FFB3CB]/40 via-[#E91E8C]/30 to-transparent" />
-
-                  {/* White Polaroid Card */}
-                  <div className="relative bg-white p-2.5 shadow-2xl shadow-black/80 rounded-sm transform-gpu">
-                    <div className="relative overflow-hidden aspect-[2/3] bg-[#F5F0EB]">
-                      <img
-                        src="/assets/kamna-portrait.jpg"
-                        alt="Arnav — Content Strategist"
-                        className="w-full h-full object-cover object-center select-none"
-                      />
-                    </div>
-
-                    {/* Handwritten Polaroid Caption */}
-                    <p className="text-center text-[#0A0A0A]/85 font-caveat text-base pt-1.5 pb-0.5 tracking-wide font-semibold">
-                      @ariimakesflims
-                    </p>
-                  </div>
-
-                  {/* --- HANDWRITTEN POPUP STICKERS FROM KAMNA-PORTFOLIO --- */}
-
-                  {/* 1. Sticker Top-Left: "21 years old" */}
-                  <motion.div
-                    initial={{ scale: 0, opacity: 0, rotate: -15 }}
-                    animate={{ scale: 1, opacity: 1, rotate: -6 }}
-                    transition={{ delay: 0.3, duration: 0.5, ease: 'backOut' }}
-                    className="pointer-events-none absolute -top-3.5 -left-3 z-30"
-                  >
-                    <div className="bg-[#FFB3CB] text-[#0A0A0A] font-caveat text-[11px] font-bold px-2 py-0.5 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
-                      21 years old
-                    </div>
-                  </motion.div>
-
-                  {/* 2. Sticker Top-Right: "social media strategist" */}
-                  <motion.div
-                    initial={{ scale: 0, opacity: 0, rotate: 15 }}
-                    animate={{ scale: 1, opacity: 1, rotate: 6 }}
-                    transition={{ delay: 0.45, duration: 0.5, ease: 'backOut' }}
-                    className="pointer-events-none absolute -top-3.5 -right-3 z-30"
-                  >
-                    <div className="bg-[#E91E8C] text-[#F5F0EB] font-caveat text-[11px] font-bold px-2 py-0.5 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
-                      social media strategist
-                    </div>
-                  </motion.div>
-
-                  {/* 3. Sticker Middle-Left: "ghostwriter" */}
-                  <motion.div
-                    initial={{ scale: 0, opacity: 0, rotate: -25 }}
-                    animate={{ scale: 1, opacity: 1, rotate: -12 }}
-                    transition={{ delay: 0.6, duration: 0.5, ease: 'backOut' }}
-                    className="pointer-events-none absolute top-1/2 -left-4 transform -translate-y-1/2 z-30"
-                  >
-                    <div className="bg-[#FFB3CB] text-[#0A0A0A] font-caveat text-[11px] font-bold px-2 py-0.5 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
-                      ghostwriter
-                    </div>
-                  </motion.div>
-
-                  {/* 4. Sticker Bottom-Left: "content creator" */}
-                  <motion.div
-                    initial={{ scale: 0, opacity: 0, rotate: 10 }}
-                    animate={{ scale: 1, opacity: 1, rotate: 3 }}
-                    transition={{ delay: 0.75, duration: 0.5, ease: 'backOut' }}
-                    className="pointer-events-none absolute -bottom-3.5 -left-2 z-30"
-                  >
-                    <div className="bg-[#FFB3CB] text-[#0A0A0A] font-caveat text-[11px] font-bold px-2 py-0.5 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
-                      content creator
-                    </div>
-                  </motion.div>
-
-                  {/* 5. Sticker Bottom-Right: "storyteller" */}
-                  <motion.div
-                    initial={{ scale: 0, opacity: 0, rotate: -10 }}
-                    animate={{ scale: 1, opacity: 1, rotate: -3 }}
-                    transition={{ delay: 0.9, duration: 0.5, ease: 'backOut' }}
-                    className="pointer-events-none absolute -bottom-3.5 -right-2 z-30"
-                  >
-                    <div className="bg-[#E91E8C] text-[#F5F0EB] font-caveat text-[11px] font-bold px-2 py-0.5 shadow-[3px_4px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
-                      storyteller
-                    </div>
-                  </motion.div>
-                </motion.div>
-              </div>
-
-              {/* Bottom: Heading & Branding */}
-              <div className="flex flex-col gap-3 text-center px-2">
-                <h1 className="font-black uppercase leading-[1.08] tracking-tight text-[#F5F0EB] text-2xl font-playfair drop-shadow-lg">
-                  Hi, I&apos;m{' '}
-                  <span className="bg-gradient-to-r from-[#F5F0EB] via-[#FFB3CB] to-[#E91E8C] bg-clip-text text-transparent">
-                    Arnav
-                  </span>
-                </h1>
-
-                <div className="flex flex-col gap-1.5 max-w-xs mx-auto">
-                  <p className="font-dmsans text-sm text-[#F5F0EB] font-light leading-relaxed">
-                    Building my brand while teaching you to build yours{' '}
-                    <span className="text-[#E91E8C]">⭐️</span>
-                  </p>
-                  <p className="font-dmsans text-[11px] text-[#F5F0EB]/70 font-light leading-relaxed">
-                    Personal brand strategist, Content creator, Storyteller, and Ghostwriter.
-                  </p>
-                </div>
+            {/* --- HANDWRITTEN STICKER TAGS --- */}
+            <div className="pointer-events-none absolute -top-3 -left-3 z-20 transform -rotate-6">
+              <div className="bg-[#FFB3CB] text-[#0A0A0A] font-caveat text-[10px] font-bold px-2 py-0.5 shadow-[2px_3px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
+                AI VIDEO CREATOR
               </div>
             </div>
 
-            {/* SCROLL DOWN CUE */}
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.8, delay: 1.2 }}
-              className="absolute bottom-4 left-0 right-0 text-center pointer-events-none flex flex-col items-center justify-center gap-1 z-30"
-            >
-              <span className="font-mono-meta text-[10px] text-pink-300 uppercase tracking-[0.3em] font-bold drop-shadow">
-                SCROLL DOWN FOR BRANDS
-              </span>
-              <motion.div
-                animate={{ y: [0, 6, 0] }}
-                transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
-                className="text-pink-400 text-lg font-light drop-shadow-md"
-              >
-                ↓
-              </motion.div>
-            </motion.div>
-          </motion.section>
-
-          {/* STAGE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION */}
-          <section
-            ref={tearSectionRef}
-            className="relative z-20 w-full min-h-[140vh] overflow-hidden"
-          >
-            <div className="sticky top-0 left-0 w-full h-[100dvh] h-screen overflow-hidden bg-transparent">
-              <div className="relative w-full h-full">
-                <canvas ref={canvasRef} className="absolute inset-0 w-full h-full block pointer-events-none" />
+            <div className="pointer-events-none absolute -top-3 -right-3 z-20 transform rotate-6">
+              <div className="bg-[#E91E8C] text-[#F5F0EB] font-caveat text-[10px] font-bold px-2 py-0.5 shadow-[2px_3px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
+                CONTENT STRATEGIST
               </div>
             </div>
-          </section>
 
-          {/* STAGE 5: BRANDS & IMPACT SECTION SHIFTED UP TO TOUCH THE PAPER TEAR LINE */}
-          <div className="relative z-30 -mt-[45vh] bg-[#0a080c] text-white">
-            <BrandCollaborationsSection />
+            <div className="pointer-events-none absolute top-1/2 -left-4 transform -translate-y-1/2 -rotate-12 z-20">
+              <div className="bg-[#00F5FF] text-[#0A0A0A] font-caveat text-[10px] font-bold px-2 py-0.5 shadow-[2px_3px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
+                VIDEO EDITOR
+              </div>
+            </div>
+
+            <div className="pointer-events-none absolute top-1/2 -right-4 transform -translate-y-1/2 rotate-12 z-20">
+              <div className="bg-[#FFD600] text-[#0A0A0A] font-caveat text-[10px] font-bold px-2 py-0.5 shadow-[2px_3px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
+                UGC CREATOR
+              </div>
+            </div>
+
+            <div className="pointer-events-none absolute -bottom-3 -left-2 z-20 transform rotate-3">
+              <div className="bg-[#FFB3CB] text-[#0A0A0A] font-caveat text-[10px] font-bold px-2 py-0.5 shadow-[2px_3px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
+                STORYTELLER
+              </div>
+            </div>
+
+            <div className="pointer-events-none absolute -bottom-3 -right-2 z-20 transform -rotate-3">
+              <div className="bg-[#E91E8C] text-[#F5F0EB] font-caveat text-[10px] font-bold px-2 py-0.5 shadow-[2px_3px_0_rgba(0,0,0,0.35)] whitespace-nowrap">
+                CONTENT PARTNER
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+
+        {/* Description Bio */}
+        <motion.p
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.9, delay: 0.55 }}
+          className="text-xs text-[#F5F0EB]/80 font-light leading-relaxed max-w-xs mb-4"
+        >
+          I help business owners and brands turn what’s in their heads into content that feels, walks and talks like them — through strategy, storytelling, AI, UGC and editing.
+        </motion.p>
+
+        {/* Small Line */}
+        <p className="font-mono-meta text-[11px] font-bold uppercase tracking-[0.25em] text-[#FFD600] mb-5">
+          YOUR IDEA. MY EXECUTION. ✦
+        </p>
+
+        {/* Hero Action CTA Button */}
+        <motion.button
+          whileTap={{ scale: 0.96 }}
+          onClick={scrollToContact}
+          className="btn-gradient relative inline-flex items-center justify-center rounded-full px-7 py-3.5 text-xs font-bold uppercase tracking-widest text-white shadow-[0_4px_25px_rgba(233,30,140,0.6)]"
+        >
+          WORK WITH ME →
+        </motion.button>
+      </section>
+
+      {/* --- SECTION 02: THE PROBLEM --- */}
+      <section className="relative z-10 px-5 py-12 bg-[#0E0A12] border-y border-white/10">
+        <div className="max-w-md mx-auto flex flex-col gap-6">
+          <div className="inline-block px-3 py-1 rounded-full bg-[#E91E8C]/20 border border-[#E91E8C]/40 text-[#FFB3CB] font-mono-meta text-[10px] font-bold uppercase tracking-widest w-fit">
+            02 — THE PROBLEM
           </div>
-        </>
-      )}
+
+          <h2 className="font-playfair text-2xl font-black uppercase text-white leading-tight">
+            DOES YOUR BRAND ACTUALLY LOOK & SOUND LIKE YOU?
+          </h2>
+
+          <div className="flex flex-col gap-3 text-sm text-[#F5F0EB]/90 leading-relaxed font-light">
+            <p className="font-bold text-white text-base">No, seriously.</p>
+            <p>Don’t just skim past this question.</p>
+            <p>Take two minutes. Really think about it.</p>
+          </div>
+
+          {/* Interactive Checklist Box */}
+          <div className="bg-[#150F1C] p-4 rounded-xl border border-white/10 flex flex-col gap-3">
+            <div className="flex items-start gap-3">
+              <span className="text-[#FF3B30] text-base">❓</span>
+              <p className="text-xs text-white/90">Does your content look the way you imagined it?</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="text-[#FF3B30] text-base">❓</span>
+              <p className="text-xs text-white/90">Does it sound like you?</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="text-[#FF3B30] text-base">❓</span>
+              <p className="text-xs text-white/90">Does it capture the ideas, personality and feeling you have in your head?</p>
+            </div>
+            <div className="flex items-start gap-3">
+              <span className="text-[#FF3B30] text-base">❓</span>
+              <p className="text-xs text-white/90">Or does it sometimes feel like you’re just putting content out because you have to?</p>
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-r from-[#E91E8C]/20 to-[#3B82F6]/20 p-4 rounded-xl border border-[#E91E8C]/40 flex flex-col gap-2">
+            <p className="text-xs font-bold text-white">If the answer is no… Well, it’s your lucky day.</p>
+            <p className="text-xs text-white/80">Because you’ve landed on the right page.</p>
+          </div>
+
+          <p className="text-xs text-white/80 leading-relaxed">
+            I’m here to take those ideas, thoughts and stories in your head and turn them into content that feels real, intentional and actually like you.
+          </p>
+
+          <p className="text-xs text-white/80 leading-relaxed">
+            And you don’t need a huge production team or an unnecessarily expensive process to make that happen. I combine strategy, storytelling, AI, UGC and editing to make content creation more creative, efficient and cost-effective.
+          </p>
+
+          <div className="pt-2 flex flex-col gap-3">
+            <div className="p-3 bg-[#E91E8C] text-white text-center font-black tracking-widest text-xs uppercase rounded-lg shadow-lg">
+              YOUR IDEAS → MY EXECUTION.
+            </div>
+            <button
+              onClick={scrollToContact}
+              className="w-full py-3 rounded-lg border border-white/30 bg-white/5 text-xs font-bold uppercase tracking-widest text-white hover:bg-white/10"
+            >
+              WORK WITH ME →
+            </button>
+          </div>
+        </div>
+      </section>
+
+      {/* --- SECTION 03: EXPERIENCE --- */}
+      <section className="relative z-10 px-5 py-12 bg-[#0A080C]">
+        <div className="max-w-md mx-auto flex flex-col gap-6">
+          <div className="inline-block px-3 py-1 rounded-full bg-[#00F5FF]/20 border border-[#00F5FF]/40 text-[#00F5FF] font-mono-meta text-[10px] font-bold uppercase tracking-widest w-fit">
+            03 — EXPERIENCE
+          </div>
+
+          <h2 className="font-playfair text-2xl font-black uppercase text-white leading-tight">
+            10+ BRANDS. MANY DIFFERENT STORIES.
+          </h2>
+
+          <p className="text-xs text-white/80 leading-relaxed font-light">
+            I’ve had the opportunity to create content across 10+ brands and multiple industries:
+          </p>
+
+          {/* Marquee Industry Badges */}
+          <div className="flex flex-wrap gap-2 py-2">
+            {[
+              'Architecture',
+              'Interior Design',
+              'Wellness',
+              'Food',
+              'Jewellery',
+              'Animation',
+              'Pet & Dog Brands',
+              'UGC',
+              'YouTube & Long-form',
+            ].map((ind, i) => (
+              <span
+                key={i}
+                className="px-3 py-1.5 rounded-full bg-white/5 border border-white/15 text-[11px] font-semibold text-white/90"
+              >
+                ✦ {ind}
+              </span>
+            ))}
+          </div>
+
+          <div className="p-4 bg-[#150F1C] border-l-4 border-[#00F5FF] rounded-r-xl text-xs leading-relaxed text-white/90 italic">
+            &ldquo;Different businesses. Different audiences. Different stories. But every project taught me the same thing: <span className="font-bold text-[#00F5FF] not-italic">Good content starts with understanding what makes a brand worth listening to.</span>&rdquo;
+          </div>
+        </div>
+      </section>
+
+      {/* --- SECTION 04: WHAT I’VE BUILT (METRICS) --- */}
+      <section className="relative z-10 px-5 py-12 bg-[#0E0A12] border-y border-white/10">
+        <div className="max-w-md mx-auto flex flex-col gap-6">
+          <div className="inline-block px-3 py-1 rounded-full bg-[#FFD600]/20 border border-[#FFD600]/40 text-[#FFD600] font-mono-meta text-[10px] font-bold uppercase tracking-widest w-fit">
+            04 — WHAT I’VE BUILT
+          </div>
+
+          <h2 className="font-playfair text-2xl font-black uppercase text-white leading-tight">
+            AND I’VE SEEN WHAT HAPPENS WHEN AN IDEA CONNECTS.
+          </h2>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="p-4 bg-[#150F1C] rounded-xl border border-white/10 flex flex-col gap-1">
+              <span className="font-playfair text-2xl font-black text-[#FFD600]">4L+</span>
+              <span className="font-mono-meta text-[10px] font-bold text-white uppercase">ORGANIC VIEWS</span>
+              <span className="text-[10px] text-white/60">Social campaign</span>
+            </div>
+
+            <div className="p-4 bg-[#150F1C] rounded-xl border border-white/10 flex flex-col gap-1">
+              <span className="font-playfair text-2xl font-black text-[#EC4899]">2L+</span>
+              <span className="font-mono-meta text-[10px] font-bold text-white uppercase">ORGANIC VIEWS</span>
+              <span className="text-[10px] text-white/60">Organic social content</span>
+            </div>
+
+            <div className="p-4 bg-[#150F1C] rounded-xl border border-white/10 flex flex-col gap-1 col-span-2">
+              <span className="font-playfair text-lg font-black text-[#00F5FF]">LONG-FORM YOUTUBE</span>
+              <span className="text-[11px] text-white/80">Storytelling, editing & production</span>
+            </div>
+
+            <div className="p-4 bg-[#150F1C] rounded-xl border border-white/10 flex flex-col gap-1 col-span-2">
+              <span className="font-playfair text-lg font-black text-[#8B5CF6]">AI-POWERED VIDEO</span>
+              <span className="text-[11px] text-white/80">Turning ideas and images into complete visual stories</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* --- SECTION 05: WHAT I CAN DO FOR YOU --- */}
+      <section className="relative z-10 px-5 py-12 bg-[#0A080c]">
+        <div className="max-w-md mx-auto flex flex-col gap-6">
+          <div className="inline-block px-3 py-1 rounded-full bg-[#EC4899]/20 border border-[#EC4899]/40 text-[#FFB3CB] font-mono-meta text-[10px] font-bold uppercase tracking-widest w-fit">
+            05 — SERVICES
+          </div>
+
+          <h2 className="font-playfair text-2xl font-black uppercase text-white leading-tight">
+            FROM “WHAT SHOULD I POST?” TO “LET’S MAKE IT.”
+          </h2>
+
+          <div className="flex flex-col gap-3">
+            {[
+              {
+                title: 'CONTENT STRATEGY',
+                desc: 'Finding what your brand should actually be saying — from content pillars and ideas to hooks, angles and direction.',
+                icon: '🎯',
+              },
+              {
+                title: 'AI VIDEO',
+                desc: 'Turn a product, photograph, concept or simple idea into an entire visual story.',
+                icon: '🤖',
+              },
+              {
+                title: 'VIDEO EDITING',
+                desc: 'Turn raw footage into engaging short-form, social and long-form content.',
+                icon: '🎬',
+              },
+              {
+                title: 'UGC',
+                desc: 'Create relatable, creator-led content that feels natural to the platform and the people watching it.',
+                icon: '🤳',
+              },
+              {
+                title: 'STORYTELLING',
+                desc: 'Find the story hiding inside your business and turn it into something people want to hear.',
+                icon: '📖',
+              },
+              {
+                title: 'CONTENT CREATION',
+                desc: 'Take an idea from the first thought to the finished piece — strategy, scripting, creation and execution.',
+                icon: '✨',
+              },
+            ].map((srv, i) => (
+              <div key={i} className="p-4 bg-[#150F1C] rounded-xl border border-white/10 flex flex-col gap-1.5">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">{srv.icon}</span>
+                  <h3 className="font-mono-meta text-xs font-bold uppercase tracking-wider text-white">
+                    {srv.title}
+                  </h3>
+                </div>
+                <p className="text-xs text-white/70 leading-relaxed font-light">{srv.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* --- SECTION 06: THE DIFFERENCE --- */}
+      <section className="relative z-10 px-5 py-12 bg-[#0E0A12] border-y border-white/10">
+        <div className="max-w-md mx-auto flex flex-col gap-6 text-center">
+          <div className="inline-block px-3 py-1 rounded-full bg-[#00F5FF]/20 border border-[#00F5FF]/40 text-[#00F5FF] font-mono-meta text-[10px] font-bold uppercase tracking-widest w-fit mx-auto">
+            06 — THE DIFFERENCE
+          </div>
+
+          <h2 className="font-playfair text-2xl font-black uppercase text-white leading-tight">
+            I DON’T WANT TO MAKE CONTENT FOR YOU. I WANT TO FIND YOUR CONTENT.
+          </h2>
+
+          <p className="text-xs text-white/80 leading-relaxed font-light">
+            There’s a difference. Making content is easy. Finding the right story, the right angle and the right way to communicate it — that’s the interesting part.
+          </p>
+
+          <p className="text-xs text-white/80 leading-relaxed font-light">
+            I want to understand your business, your personality, your audience and what you’re trying to say. Then we make something that feels like you, not something copied from everyone else.
+          </p>
+
+          <div className="p-4 bg-gradient-to-r from-[#EC4899]/30 via-[#8B5CF6]/30 to-[#00F5FF]/30 rounded-xl border border-white/20 font-black text-xs uppercase tracking-widest text-white shadow-xl">
+            STRATEGY + CREATIVITY + EXECUTION.
+          </div>
+        </div>
+      </section>
+
+      {/* --- SECTION 07: WHY WORK WITH ME? --- */}
+      <section className="relative z-10 px-5 py-12 bg-[#0A080C]">
+        <div className="max-w-md mx-auto flex flex-col gap-6">
+          <div className="inline-block px-3 py-1 rounded-full bg-[#FFD600]/20 border border-[#FFD600]/40 text-[#FFD600] font-mono-meta text-[10px] font-bold uppercase tracking-widest w-fit">
+            07 — WHY WORK WITH ME?
+          </div>
+
+          <h2 className="font-playfair text-2xl font-black uppercase text-white leading-tight">
+            BEYOND THE CONTENT, HERE’S WHAT YOU GET.
+          </h2>
+
+          <div className="flex flex-col gap-4">
+            <div className="p-4 bg-[#150F1C] rounded-xl border border-white/10 flex flex-col gap-2">
+              <h3 className="font-mono-meta text-xs font-bold text-[#FFD600] uppercase tracking-wider">
+                01 — I ACTUALLY LISTEN.
+              </h3>
+              <p className="text-xs text-white/80 leading-relaxed font-light">
+                Not just to your brief — to you. I’ll take the time to understand what you’re imagining, what you’re trying to communicate and what you don’t want your brand to become.
+              </p>
+              <p className="text-xs italic text-white/60">
+                &ldquo;Sometimes the best content idea isn’t in the brief. It’s somewhere in the conversation.&rdquo;
+              </p>
+            </div>
+
+            <div className="p-4 bg-[#150F1C] rounded-xl border border-white/10 flex flex-col gap-2">
+              <h3 className="font-mono-meta text-xs font-bold text-[#EC4899] uppercase tracking-wider">
+                02 — I’M IN YOUR CORNER.
+              </h3>
+              <p className="text-xs text-white/80 leading-relaxed font-light">
+                Whether a video gets 10 views or 10 lakh, I’ll still be rooting for you. Content creation is unpredictable. Sometimes you nail it. Sometimes the algorithm has other plans.
+              </p>
+              <p className="text-xs text-[#EC4899] font-semibold">
+                But the effort, the learning and the next idea? I’ll be there for all of it.
+              </p>
+            </div>
+
+            <div className="p-4 bg-[#150F1C] rounded-xl border border-white/10 flex flex-col gap-2">
+              <h3 className="font-mono-meta text-xs font-bold text-[#00F5FF] uppercase tracking-wider">
+                03 — I CARE ABOUT THE WHY.
+              </h3>
+              <p className="text-xs text-white/80 leading-relaxed font-light">
+                I don’t want to make something that simply looks good. I want to know: Why are we making this? Who is it for? What should they feel?
+              </p>
+            </div>
+
+            <div className="p-4 bg-[#150F1C] rounded-xl border border-white/10 flex flex-col gap-2">
+              <h3 className="font-mono-meta text-xs font-bold text-[#8B5CF6] uppercase tracking-wider">
+                04 — I KEEP IT COST-EFFECTIVE.
+              </h3>
+              <p className="text-xs text-white/80 leading-relaxed font-light">
+                You don’t need a massive production house to make great content. By combining AI, editing, UGC, strategy and creative execution, I can keep the process lean.
+              </p>
+              <span className="font-mono-meta text-[10px] font-bold text-[#8B5CF6] uppercase tracking-widest">
+                SMALLER PROCESS. BIGGER POSSIBILITIES.
+              </span>
+            </div>
+
+            <div className="p-4 bg-[#150F1C] rounded-xl border border-white/10 flex flex-col gap-2">
+              <h3 className="font-mono-meta text-xs font-bold text-[#FFD600] uppercase tracking-wider">
+                05 — I’M HERE FOR THE LONG GAME.
+              </h3>
+              <p className="text-xs text-white/80 leading-relaxed font-light">
+                I’m not interested in making one reel and disappearing. I’ll learn your brand. I’ll understand your audience. I’ll learn what works and what doesn’t.
+              </p>
+              <span className="font-mono-meta text-[10px] font-bold text-[#FFD600] uppercase tracking-widest">
+                GOOD CONTENT ISN’T BUILT IN ONE POST.
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* --- SECTION 08: HOW WE WORK --- */}
+      <section className="relative z-10 px-5 py-12 bg-[#0E0A12] border-y border-white/10">
+        <div className="max-w-md mx-auto flex flex-col gap-6">
+          <div className="inline-block px-3 py-1 rounded-full bg-[#EC4899]/20 border border-[#EC4899]/40 text-[#FFB3CB] font-mono-meta text-[10px] font-bold uppercase tracking-widest w-fit">
+            08 — HOW WE WORK
+          </div>
+
+          <h2 className="font-playfair text-2xl font-black uppercase text-white leading-tight">
+            FROM IDEA TO “LET’S POST IT.”
+          </h2>
+
+          <div className="grid grid-cols-1 gap-3">
+            {[
+              { num: '01', name: 'TALK', desc: 'Tell me about your business, your audience and what you’re trying to achieve.' },
+              { num: '02', name: 'FIND', desc: 'We figure out what your brand should actually be saying.' },
+              { num: '03', name: 'CREATE', desc: 'Strategy, scripting, UGC, AI, shooting, editing and storytelling — whatever the idea needs.' },
+              { num: '04', name: 'DELIVER', desc: 'You get content that’s ready to publish and actually feels like your brand.' },
+            ].map((step, i) => (
+              <div key={i} className="p-4 bg-[#150F1C] rounded-xl border border-white/10 flex items-start gap-4">
+                <span className="font-playfair text-2xl font-black text-[#EC4899]">{step.num}</span>
+                <div className="flex flex-col gap-1">
+                  <h3 className="font-mono-meta text-xs font-bold uppercase tracking-wider text-white">
+                    {step.name}
+                  </h3>
+                  <p className="text-xs text-white/70 font-light">{step.desc}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* --- SECTION 09: PORTFOLIO --- */}
+      <section className="relative z-10 px-5 py-12 bg-[#0A080C]">
+        <div className="max-w-md mx-auto flex flex-col gap-6">
+          <div className="inline-block px-3 py-1 rounded-full bg-[#00F5FF]/20 border border-[#00F5FF]/40 text-[#00F5FF] font-mono-meta text-[10px] font-bold uppercase tracking-widest w-fit">
+            09 — PORTFOLIO
+          </div>
+
+          <h2 className="font-playfair text-2xl font-black uppercase text-white leading-tight">
+            SOME THINGS I’VE MADE.
+          </h2>
+
+          {/* Category Filter Chips */}
+          <div className="flex flex-wrap gap-1.5">
+            {['ALL', 'AI VIDEO', 'SOCIAL CONTENT', 'VIDEO EDITING', 'UGC', 'YOUTUBE', 'LONG-FORM'].map((cat) => (
+              <button
+                key={cat}
+                onClick={() => setActiveCategory(cat)}
+                className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase transition-all ${
+                  activeCategory === cat
+                    ? 'bg-[#00F5FF] text-[#0A0A0A] shadow-[0_0_12px_rgba(0,245,255,0.6)]'
+                    : 'bg-white/5 text-white/70 border border-white/10 hover:bg-white/10'
+                }`}
+              >
+                {cat}
+              </button>
+            ))}
+          </div>
+
+          {/* Project List */}
+          <div className="flex flex-col gap-3">
+            {filteredProjects.map((p) => (
+              <div key={p.id} className="p-4 bg-[#150F1C] rounded-xl border border-white/10 flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono-meta text-[9px] font-bold uppercase tracking-widest text-[#00F5FF] px-2 py-0.5 rounded bg-[#00F5FF]/10">
+                    {p.tag}
+                  </span>
+                  <span className="text-[10px] text-white/50">{p.category}</span>
+                </div>
+                <h3 className="font-playfair text-base font-bold text-white">{p.title}</h3>
+                <p className="text-xs text-white/70 font-light">{p.desc}</p>
+                <button
+                  onClick={scrollToContact}
+                  className="text-left text-[11px] font-bold text-[#00F5FF] uppercase tracking-wider hover:underline pt-1"
+                >
+                  VIEW PROJECT →
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* --- SECTION 10: ABOUT ARI --- */}
+      <section className="relative z-10 px-5 py-12 bg-[#0E0A12] border-y border-white/10">
+        <div className="max-w-md mx-auto flex flex-col gap-6">
+          <div className="inline-block px-3 py-1 rounded-full bg-[#FFD600]/20 border border-[#FFD600]/40 text-[#FFD600] font-mono-meta text-[10px] font-bold uppercase tracking-widest w-fit">
+            10 — ABOUT ARI
+          </div>
+
+          <h2 className="font-playfair text-2xl font-black uppercase text-white leading-tight">
+            A LITTLE ABOUT ME.
+          </h2>
+
+          <div className="flex flex-col gap-3 text-xs text-white/80 leading-relaxed font-light">
+            <p>
+              I’m Ari — a creator working at the intersection of content, storytelling, video and AI.
+            </p>
+            <p>
+              I started with animation and filmmaking and eventually moved into content creation, editing, social media and AI-powered production.
+            </p>
+            <p>
+              I’ve always loved the process of taking something that exists only as an idea and turning it into something you can actually see, feel and share.
+            </p>
+            <p>
+              Today, I bring all of those skills together to help businesses create content that feels intentional, creative and genuinely theirs.
+            </p>
+            <div className="p-3 bg-[#150F1C] border-l-4 border-[#FFD600] text-[#FFD600] font-bold italic not-italic">
+              &ldquo;I’m not here to make your brand look like everyone else’s. I’m here to help you make it look like you.&rdquo;
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* --- SECTION 11: THE PHILOSOPHY (INTERACTIVE DICE ROLL 🎲 GAME) --- */}
+      <section className="relative z-10 px-5 py-12 bg-[#0A080C]">
+        <div className="max-w-md mx-auto flex flex-col gap-6 text-center">
+          <div className="inline-block px-3 py-1 rounded-full bg-[#EC4899]/20 border border-[#EC4899]/40 text-[#FFB3CB] font-mono-meta text-[10px] font-bold uppercase tracking-widest w-fit mx-auto">
+            11 — THE PHILOSOPHY
+          </div>
+
+          <h2 className="font-playfair text-2xl font-black uppercase text-white leading-tight">
+            CONTENT IS A DICEY GAME. 🎲
+          </h2>
+
+          {/* Interactive Dice Roller Card */}
+          <div className="p-5 bg-[#150F1C] rounded-2xl border border-[#EC4899]/40 flex flex-col items-center gap-4 shadow-[0_0_30px_rgba(236,72,153,0.2)]">
+            <motion.div
+              animate={{ rotate: isRolling ? 360 : 0 }}
+              transition={{ duration: 0.6, ease: 'easeInOut' }}
+              onClick={handleRollDice}
+              className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-[#EC4899] to-[#FFD600] flex items-center justify-center text-3xl shadow-xl cursor-pointer select-none"
+            >
+              🎲
+            </motion.div>
+
+            <button
+              onClick={handleRollDice}
+              className="px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/20 text-[10px] font-bold uppercase tracking-widest text-white border border-white/20"
+            >
+              TAP TO ROLL THE DICE 🎲
+            </button>
+
+            <AnimatePresence mode="wait">
+              <motion.p
+                key={diceIndex}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.4 }}
+                className="text-xs text-white/90 font-medium italic leading-relaxed max-w-xs"
+              >
+                &ldquo;{DICE_QUOTES[diceIndex]}&rdquo;
+              </motion.p>
+            </AnimatePresence>
+          </div>
+
+          <div className="flex flex-col gap-3 text-xs text-white/70 leading-relaxed font-light">
+            <p>You never really know what’s going to happen. Every post is another chance. Every idea is another roll.</p>
+            <p>And somewhere between the flops, the experiments, and the jackpot moments — you find what makes people care.</p>
+          </div>
+
+          <h3 className="font-playfair text-xl font-black uppercase text-[#FFD600] tracking-wider">
+            SO, SHALL WE ROLL? 🎲
+          </h3>
+        </div>
+      </section>
+
+      {/* --- SECTION 12: FINAL CTA & SECTION 13: CONTACT FORM --- */}
+      <section id="contact-section" className="relative z-10 px-5 py-12 bg-[#0E0A12] border-t border-white/10">
+        <div className="max-w-md mx-auto flex flex-col gap-6">
+          <div className="inline-block px-3 py-1 rounded-full bg-[#00F5FF]/20 border border-[#00F5FF]/40 text-[#00F5FF] font-mono-meta text-[10px] font-bold uppercase tracking-widest w-fit">
+            12 — FINAL CTA & 13 — CONTACT
+          </div>
+
+          <h2 className="font-playfair text-2xl font-black uppercase text-white leading-tight">
+            HAVE AN IDEA? LET’S MAKE IT REAL.
+          </h2>
+
+          <p className="text-xs text-white/80 font-light leading-relaxed">
+            Whether you have a complete content plan or just a random idea sitting in your Notes app — send it my way.
+          </p>
+
+          {/* Interactive Form */}
+          <form onSubmit={handleFormSubmit} className="flex flex-col gap-4 bg-[#150F1C] p-5 rounded-2xl border border-white/10">
+            {formSubmitted ? (
+              <div className="p-4 bg-[#00F5FF]/20 border border-[#00F5FF] rounded-xl text-center flex flex-col gap-2">
+                <span className="text-2xl">🎉</span>
+                <p className="font-bold text-white text-xs uppercase tracking-wider">Message Received!</p>
+                <p className="text-[11px] text-white/80">I&apos;ll get back to you within 24 hours.</p>
+              </div>
+            ) : (
+              <>
+                <div className="flex flex-col gap-1 text-left">
+                  <label className="font-mono-meta text-[10px] font-bold uppercase tracking-widest text-white/70">
+                    YOUR NAME
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="Enter your name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-white/5 border border-white/15 text-xs text-white placeholder-white/30 focus:outline-none focus:border-[#00F5FF]"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1 text-left">
+                  <label className="font-mono-meta text-[10px] font-bold uppercase tracking-widest text-white/70">
+                    YOUR EMAIL
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="Enter your email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-white/5 border border-white/15 text-xs text-white placeholder-white/30 focus:outline-none focus:border-[#00F5FF]"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1 text-left">
+                  <label className="font-mono-meta text-[10px] font-bold uppercase tracking-widest text-white/70">
+                    WHAT DO YOU NEED HELP WITH?
+                  </label>
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {['AI VIDEO', 'STRATEGY', 'VIDEO EDITING', 'UGC', 'STORYTELLING'].map((srv) => (
+                      <button
+                        type="button"
+                        key={srv}
+                        onClick={() => setFormData({ ...formData, service: srv })}
+                        className={`px-3 py-1 rounded-full text-[10px] font-bold tracking-wider uppercase transition-all ${
+                          formData.service === srv
+                            ? 'bg-[#E91E8C] text-white shadow-md'
+                            : 'bg-white/5 text-white/60 border border-white/10'
+                        }`}
+                      >
+                        {srv}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-1 text-left">
+                  <label className="font-mono-meta text-[10px] font-bold uppercase tracking-widest text-white/70">
+                    TELL ME ABOUT YOUR PROJECT
+                  </label>
+                  <textarea
+                    rows={3}
+                    placeholder="Share your goals or notes..."
+                    value={formData.details}
+                    onChange={(e) => setFormData({ ...formData, details: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-white/5 border border-white/15 text-xs text-white placeholder-white/30 focus:outline-none focus:border-[#00F5FF] resize-none"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1 text-left">
+                  <label className="font-mono-meta text-[10px] font-bold uppercase tracking-widest text-white/70">
+                    BUDGET / RANGE
+                  </label>
+                  <select
+                    value={formData.budget}
+                    onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-lg bg-[#150F1C] border border-white/15 text-xs text-white focus:outline-none focus:border-[#00F5FF]"
+                  >
+                    <option value="< $1,000">&lt; $1,000</option>
+                    <option value="$1,000 - $3,000">$1,000 - $3,000</option>
+                    <option value="$3,000 - $5,000">$3,000 - $5,000</option>
+                    <option value="$5,000+">$5,000+</option>
+                  </select>
+                </div>
+
+                <button
+                  type="submit"
+                  className="btn-gradient w-full py-3.5 rounded-xl font-bold uppercase tracking-widest text-xs text-white shadow-[0_4px_25px_rgba(233,30,140,0.6)] mt-2"
+                >
+                  SEND IT MY WAY →
+                </button>
+              </>
+            )}
+          </form>
+        </div>
+      </section>
+
+      {/* --- SECTION 14: FOOTER --- */}
+      <footer className="relative z-10 px-5 py-10 bg-[#0A080C] text-center flex flex-col items-center gap-4">
+        <h3 className="font-playfair text-3xl font-black tracking-widest text-white uppercase">ARI</h3>
+        <p className="font-mono-meta text-[10px] font-bold uppercase tracking-widest text-white/50">
+          AI VIDEO · CONTENT · EDITING · UGC · STRATEGY
+        </p>
+
+        <div className="flex items-center justify-center gap-4 text-xs font-semibold text-[#00F5FF]">
+          <a href="#" className="hover:underline">Instagram</a>
+          <span>·</span>
+          <a href="#" className="hover:underline">YouTube</a>
+          <span>·</span>
+          <a href="#" className="hover:underline">LinkedIn</a>
+          <span>·</span>
+          <a href="#" className="hover:underline">Email</a>
+        </div>
+
+        <p className="text-[10px] text-white/30 pt-2 font-mono-meta">© 2026 ARI. ALL RIGHTS RESERVED.</p>
+      </footer>
     </div>
   );
 };
