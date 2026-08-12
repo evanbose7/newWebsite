@@ -113,38 +113,6 @@ export const ScrollPaperTearOverlay: React.FC = () => {
     };
   }, [isStatementScreen]);
 
-  // Track scroll progress for Phase 3 (Hero Portrait Section)
-  const { scrollYProgress: portraitScrollProgress } = useScroll({
-    target: portraitSectionRef,
-    offset: ['start end', 'end start'],
-  });
-
-  // RESPONSIVE HERO PORTRAIT ENTRANCE ANIMATION
-  const portraitX = useTransform(
-    portraitScrollProgress,
-    [0.08, 0.35],
-    [isMobile ? '0vw' : '-45vw', '0vw']
-  );
-  const portraitY = useTransform(
-    portraitScrollProgress,
-    [0.08, 0.35],
-    [isMobile ? '4vh' : '40vh', '0vh']
-  );
-  const portraitRotate = useTransform(
-    portraitScrollProgress,
-    [0.08, 0.35],
-    [isMobile ? -2 : -16, 2]
-  );
-  const portraitScale = useTransform(
-    portraitScrollProgress,
-    [0.08, 0.35],
-    [isMobile ? 0.94 : 0.72, 1.0]
-  );
-  const portraitOpacity = useTransform(portraitScrollProgress, [0.05, 0.2], [0, 1]);
-
-  const textContentOpacity = useTransform(portraitScrollProgress, [0.08, 0.28], [0, 1]);
-  const textContentY = useTransform(portraitScrollProgress, [0.08, 0.28], [20, 0]);
-
   // Track scroll progress for Phase 4 (Paper Tear Section)
   const { scrollYProgress: tearScrollProgress } = useScroll({
     target: tearSectionRef,
@@ -424,7 +392,7 @@ export const ScrollPaperTearOverlay: React.FC = () => {
   return (
     <div
       ref={containerRef}
-      className={`relative w-full ${isStatementScreen ? (isMobile ? 'min-h-[350vh]' : 'min-h-[400vh]') : 'h-[100dvh] overflow-hidden'} bg-[#0a080c] select-none touch-pan-y`}
+      className={`relative w-full ${isStatementScreen ? 'min-h-[350vh]' : 'h-[100dvh] overflow-hidden'} bg-[#0a080c] select-none touch-pan-y`}
     >
       {/* EXPANDING CENTRAL CIRCULAR AURA DOT (CAPPED & SOFTENED ON PHONE TO PREVENT SOLID PINK COVER SCREEN) */}
       <motion.div
@@ -568,21 +536,15 @@ export const ScrollPaperTearOverlay: React.FC = () => {
         </section>
       )}
 
-      {/* PHASE 3: HERO POLAROID PORTRAIT DIAGONAL ENTRANCE SECTION (FULLY OPTIMIZED & CLEAN FOR PHONE) */}
+      {/* PHASE 3: HERO POLAROID PORTRAIT SECTION (100% STATIC IN DOCUMENT FLOW, NO OVERLAP INTO PHASE 2) */}
       {isStatementScreen && (
         <section
           ref={portraitSectionRef}
-          className="relative z-20 w-full min-h-[100dvh] sm:min-h-[110vh] px-4 sm:px-14 md:px-24 py-8 sm:py-12 flex items-center justify-center overflow-hidden bg-transparent"
+          className="relative z-20 w-full min-h-[100dvh] px-5 sm:px-14 md:px-24 py-16 sm:py-24 flex items-center justify-center overflow-hidden bg-transparent"
         >
-          <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-8 sm:gap-12 lg:gap-16 items-center relative z-10 sticky top-[8vh] sm:top-[15vh]">
-            {/* Left Column: Heading & Branding */}
-            <motion.div
-              style={{
-                opacity: textContentOpacity,
-                y: textContentY,
-              }}
-              className="flex flex-col gap-4 sm:gap-6 order-2 lg:order-1 text-center lg:text-left px-2 sm:px-0"
-            >
+          <div className="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-[1.2fr_1fr] gap-10 sm:gap-12 lg:gap-16 items-center relative z-10">
+            {/* Left Column: Heading & Branding (Static in Flow) */}
+            <div className="flex flex-col gap-4 sm:gap-6 order-2 lg:order-1 text-center lg:text-left px-2 sm:px-0">
               <h1 className="font-black uppercase leading-[1.08] tracking-tight text-[#F5F0EB] text-3xl sm:text-6xl lg:text-7xl font-playfair drop-shadow-lg">
                 Hi, I&apos;m{' '}
                 <span className="bg-gradient-to-r from-[#F5F0EB] via-[#FFB3CB] to-[#E91E8C] bg-clip-text text-transparent">
@@ -609,20 +571,11 @@ export const ScrollPaperTearOverlay: React.FC = () => {
                   Explore Brands & Impact &rarr;
                 </a>
               </div>
-            </motion.div>
+            </div>
 
-            {/* Right Column: Hero Polaroid Portrait Frame (Fully Centered & Scaled for Mobile Viewports) */}
-            <div className="order-1 lg:order-2 flex flex-col items-center lg:items-end justify-center py-2 sm:py-4">
-              <motion.div
-                style={{
-                  x: portraitX,
-                  y: portraitY,
-                  rotate: portraitRotate,
-                  scale: portraitScale,
-                  opacity: portraitOpacity,
-                }}
-                className="relative w-[min(76vw,280px)] sm:w-[360px] my-2 cursor-pointer select-none transform-gpu"
-              >
+            {/* Right Column: Hero Polaroid Portrait Frame (COMPLETELY STATIC, NO SCROLL MOTION OR STICKY OVERLAP) */}
+            <div className="order-1 lg:order-2 flex flex-col items-center lg:items-end justify-center py-4">
+              <div className="relative w-[min(76vw,280px)] sm:w-[360px] my-4 cursor-pointer select-none transform-gpu rotate-2">
                 {/* Polaroid Radial Glow */}
                 <div className="pointer-events-none absolute inset-0 m-auto h-[85%] w-[85%] rounded-full blur-3xl bg-gradient-to-r from-[#FFB3CB]/40 via-[#E91E8C]/30 to-transparent" />
 
@@ -678,13 +631,13 @@ export const ScrollPaperTearOverlay: React.FC = () => {
                     storyteller
                   </div>
                 </div>
-              </motion.div>
+              </div>
             </div>
           </div>
         </section>
       )}
 
-      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION (PHONE OPTIMIZED TO REACH END ON SCROLL) */}
+      {/* PHASE 4: FULL-SCREEN CANVAS PAPER TEAR TRANSITION */}
       {isStatementScreen && (
         <>
           <section
