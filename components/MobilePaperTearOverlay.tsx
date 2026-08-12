@@ -38,7 +38,7 @@ const SEQUENCE_WORDS: WordItem[][] = [
 // Single replacement words sequence for scroll
 const REPLACE_WORDS = ['I', 'BRIDGE', 'THE', 'GAP', 'BETWEEN', 'IDEAS', '&', 'EXECUTION.'];
 
-// Display component showing only 1 single white word at a time on black background
+// Display component showing only 1 single white word at the EXACT SAME FIXED POSITION on black background
 const SingleWordScrollDisplay: React.FC<{ wordIdxValue: MotionValue<number> }> = ({ wordIdxValue }) => {
   const [currentIdx, setCurrentIdx] = useState(0);
 
@@ -53,18 +53,20 @@ const SingleWordScrollDisplay: React.FC<{ wordIdxValue: MotionValue<number> }> =
   }, [wordIdxValue]);
 
   return (
-    <div className="sticky top-0 left-0 w-full h-[100dvh] flex items-center justify-center p-6 bg-black text-center overflow-hidden">
+    <div className="sticky top-0 left-0 w-full h-[100dvh] flex items-center justify-center bg-black text-center overflow-hidden">
       <AnimatePresence mode="wait">
-        <motion.h2
+        <motion.div
           key={currentIdx}
-          initial={{ opacity: 0, scale: 0.9, y: 12 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 1.08, y: -12 }}
-          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-          className="font-playfair text-4xl sm:text-5xl font-black tracking-tight text-white select-none uppercase drop-shadow-md"
+          initial={{ opacity: 0, scale: 0.92 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 1.08 }}
+          transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+          className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-xs text-center pointer-events-none"
         >
-          {REPLACE_WORDS[currentIdx]}
-        </motion.h2>
+          <h2 className="font-playfair text-4xl sm:text-5xl font-black tracking-tight text-white select-none uppercase drop-shadow-md">
+            {REPLACE_WORDS[currentIdx]}
+          </h2>
+        </motion.div>
       </AnimatePresence>
     </div>
   );
@@ -101,14 +103,14 @@ export const MobilePaperTearOverlay: React.FC = () => {
     };
   }, [flowStage]);
 
-  // Track scroll progress for single-word replacement section
+  // Track scroll progress for pinned black section
   const { scrollYProgress: bridgeScrollProgress } = useScroll({
     target: bridgeSectionRef,
     offset: ['start start', 'end end'],
   });
 
-  // Map scroll progress (0.0 -> 0.95) to active word index (0 -> 7)
-  const wordIdxValue = useTransform(bridgeScrollProgress, [0.0, 0.95], [0, REPLACE_WORDS.length - 0.01]);
+  // Map scroll progress (0.05 -> 0.95) to active word index (0 -> 7)
+  const wordIdxValue = useTransform(bridgeScrollProgress, [0.05, 0.95], [0, REPLACE_WORDS.length - 0.01]);
 
   const currentWords = sentenceIdx < SEQUENCE_WORDS.length ? SEQUENCE_WORDS[sentenceIdx] : SEQUENCE_WORDS[SEQUENCE_WORDS.length - 1];
 
@@ -159,7 +161,7 @@ export const MobilePaperTearOverlay: React.FC = () => {
       onClick={flowStage !== 'portrait' ? handleTap : undefined}
       className={`relative w-full ${
         flowStage === 'portrait'
-          ? 'min-h-[380vh] bg-[#000000] touch-pan-y'
+          ? 'min-h-[500vh] bg-[#000000] touch-pan-y'
           : 'h-[100dvh] overflow-hidden bg-[#0a080c] touch-none'
       } select-none flex flex-col items-center justify-start cursor-pointer`}
     >
@@ -302,7 +304,7 @@ export const MobilePaperTearOverlay: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* STAGE 3: HERO POLAROID PORTRAIT + SINGLE-WORD SCROLL REPLACEMENT ON BLACK BACKGROUND */}
+      {/* STAGE 3: HERO POLAROID PORTRAIT + PINNED SINGLE-WORD SCROLL REPLACEMENT ON BLACK BACKGROUND */}
       {flowStage === 'portrait' && (
         <>
           {/* HERO POLAROID PORTRAIT CARD */}
@@ -452,10 +454,10 @@ export const MobilePaperTearOverlay: React.FC = () => {
             </motion.div>
           </motion.section>
 
-          {/* SINGLE-WORD SCROLL REPLACEMENT SECTION ON SOLID BLACK BACKGROUND */}
+          {/* PINNED SOLID BLACK SECTION: SINGLE-WORD SCROLL REPLACEMENT AT FIXED CENTER POSITION */}
           <section
             ref={bridgeSectionRef}
-            className="relative z-30 w-full min-h-[300vh] bg-black border-t border-white/10"
+            className="relative z-30 w-full h-[500vh] bg-black border-t border-white/10"
           >
             <SingleWordScrollDisplay wordIdxValue={wordIdxValue} />
           </section>
